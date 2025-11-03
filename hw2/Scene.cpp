@@ -32,7 +32,7 @@ void Scene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsC
 
 	std::shared_ptr<TexturedSprite> pTextureSprite = std::make_shared<TexturedSprite>("intro", 0.f, 0.f, 0.2f, 0.2f);
 	std::shared_ptr<TextSprite> pTextSprite1 = std::make_shared<TextSprite>("abcABC123:", 0.f, 0.2f, 0.5f, 0.5f);
-	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("3D Game Programming", 0.0f, 0.5f, 1.f, 0.8f);
+	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("3D Game Programming", 0.0f, 0.5f, 1.f, 0.8f, XMFLOAT4(1,0,0,1));
 
 	m_pSprites.push_back(pTextureSprite);
 	m_pSprites.push_back(pTextSprite1);

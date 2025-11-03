@@ -79,6 +79,8 @@ TextSprite::TextSprite(const std::string& strText, float fLeft, float fTop, floa
 	const char* cstrText = strText.c_str();
 	strcpy_s(m_cstrText, strText.length() + 1, cstrText);	// NULL 문자 포함
 	m_nTextLength = strText.length();
+
+	m_xmf4TextColor = xmf4TextColor;
 }
 
 void TextSprite::SetText(const std::string& strText)
