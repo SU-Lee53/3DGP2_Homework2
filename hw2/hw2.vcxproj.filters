@@ -16,6 +16,9 @@
     <Filter Include="HLSL">
       <UniqueIdentifier>{2741af4f-1164-4027-96a9-c5fc8a88449c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="DirectXTex">
+      <UniqueIdentifier>{01d56613-e24a-42c5-a3e1-bf630d040da7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -78,6 +81,27 @@
     <ClInclude Include="GameObject.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="UIManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Texture.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WICTextureLoader12.h">
+      <Filter>DirectXTex</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader12.h">
+      <Filter>DirectXTex</Filter>
+    </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hw2.cpp">
@@ -131,6 +155,24 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="UIManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Texture.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WICTextureLoader12.cpp">
+      <Filter>DirectXTex</Filter>
+    </ClCompile>
+    <ClCompile Include="DDSTextureLoader12.cpp">
+      <Filter>DirectXTex</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="hw2.rc">
@@ -146,13 +188,16 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Common.hlsl">
+    <FxCompile Include="..\HLSL\Common.hlsl">
       <Filter>HLSL</Filter>
     </FxCompile>
-    <FxCompile Include="Light.hlsl">
+    <FxCompile Include="..\HLSL\Light.hlsl">
       <Filter>HLSL</Filter>
     </FxCompile>
-    <FxCompile Include="Shaders.hlsl">
+    <FxCompile Include="..\HLSL\Shaders.hlsl">
+      <Filter>HLSL</Filter>
+    </FxCompile>
+    <FxCompile Include="..\HLSL\Sprite.hlsl">
       <Filter>HLSL</Filter>
     </FxCompile>
   </ItemGroup>

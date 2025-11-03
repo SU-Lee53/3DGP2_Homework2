@@ -1,7 +1,5 @@
 #include "stdafx.h"
 #include "Scene.h"
-#include "GameObject.h"
-#include "Light.h"
 
 Scene::Scene(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
@@ -9,62 +7,6 @@ Scene::Scene(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> 
 
 void Scene::BuildDefaultLightsAndMaterials()
 {
-	m_pLights.reserve(4);
-
-	m_xmf4GlobalAmbient = XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f);
-
-	std::shared_ptr<PointLight> pLight1 = std::make_shared<PointLight>();
-	pLight1->m_bEnable = true;
-	pLight1->m_fRange = 1000.0f;
-	pLight1->m_xmf4Ambient = XMFLOAT4(0.1f, 0.0f, 0.0f, 1.0f);
-	pLight1->m_xmf4Diffuse = XMFLOAT4(0.8f, 0.0f, 0.0f, 1.0f);
-	pLight1->m_xmf4Specular = XMFLOAT4(0.5f, 0.5f, 0.5f, 0.0f);
-	pLight1->m_xmf3Position = XMFLOAT3(30.0f, 30.0f, 30.0f);
-	pLight1->m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	pLight1->m_fAttenuation0 = 1.0f;
-	pLight1->m_fAttenuation1 = 0.001f;
-	pLight1->m_fAttenuation2 = 0.0001f;
-	m_pLights.push_back(pLight1);
-
-	std::shared_ptr<SpotLight> pLight2 = std::make_shared<SpotLight>();
-	pLight2->m_bEnable = true;
-	pLight2->m_fRange = 500.0f;
-	pLight2->m_xmf4Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	pLight2->m_xmf4Diffuse = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
-	pLight2->m_xmf4Specular = XMFLOAT4(0.3f, 0.3f, 0.3f, 0.0f);
-	pLight2->m_xmf3Position = XMFLOAT3(-50.0f, 20.0f, -5.0f);
-	pLight2->m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 1.0f);
-	pLight2->m_fAttenuation0 = 1.0f;
-	pLight2->m_fAttenuation1 = 0.01f;
-	pLight2->m_fAttenuation2 = 0.0001f;
-	pLight2->m_fFalloff = 8.0f;
-	pLight2->m_fPhi = (float)cos(XMConvertToRadians(40.0f));
-	pLight2->m_fTheta = (float)cos(XMConvertToRadians(20.0f));
-	m_pLights.push_back(pLight2);
-
-	std::shared_ptr<DirectionalLight> pLight3 = std::make_shared<DirectionalLight>();
-	pLight3->m_bEnable = true;
-	pLight3->m_xmf4Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	pLight3->m_xmf4Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
-	pLight3->m_xmf4Specular = XMFLOAT4(0.4f, 0.4f, 0.4f, 0.0f);
-	pLight3->m_xmf3Direction = XMFLOAT3(1.0f, 0.0f, 0.0f);
-	m_pLights.push_back(pLight3);
-
-	std::shared_ptr<SpotLight> pLight4 = std::make_shared<SpotLight>();
-	pLight4->m_bEnable = true;
-	pLight4->m_fRange = 600.0f;
-	pLight4->m_xmf4Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	pLight4->m_xmf4Diffuse = XMFLOAT4(0.3f, 0.7f, 0.0f, 1.0f);
-	pLight4->m_xmf4Specular = XMFLOAT4(0.3f, 0.3f, 0.3f, 0.0f);
-	pLight4->m_xmf3Position = XMFLOAT3(50.0f, 30.0f, 30.0f);
-	pLight4->m_xmf3Direction = XMFLOAT3(0.0f, 1.0f, 1.0f);
-	pLight4->m_fAttenuation0 = 1.0f;
-	pLight4->m_fAttenuation1 = 0.01f;
-	pLight4->m_fAttenuation2 = 0.0001f;
-	pLight4->m_fFalloff = 8.0f;
-	pLight4->m_fPhi = (float)cos(XMConvertToRadians(90.0f));
-	pLight4->m_fTheta = (float)cos(XMConvertToRadians(30.0f));
-	m_pLights.push_back(pLight4);
 }
 
 void Scene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
@@ -73,204 +15,47 @@ void Scene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsC
 	Material::PrepareShaders(pd3dDevice, m_pd3dRootSignature);
 	BuildDefaultLightsAndMaterials();
 
-	// Load Models
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Apache.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Gunship.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/SuperCobra.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Hummer.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/M26.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Gunship.bin");
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Mi24.bin");
+	std::shared_ptr<AirplanePlayer> pAirplanePlayer = std::make_shared<AirplanePlayer>(pd3dDevice, pd3dCommandList, m_pd3dRootSignature);
+	std::shared_ptr<ThirdPersonCamera> pCamera = std::make_shared<ThirdPersonCamera>();
 
-	// Player
-	{
-		std::shared_ptr<AirplanePlayer> pAirplanePlayer = std::make_shared<AirplanePlayer>(pd3dDevice, pd3dCommandList, m_pd3dRootSignature);
-		std::shared_ptr<ThirdPersonCamera> pCamera = std::make_shared<ThirdPersonCamera>();
+	pCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	pCamera->SetTimeLag(0.25f);
+	pCamera->SetOffset(XMFLOAT3(0.0f, 105.0f, -140.0f));
+	pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+	pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
+	pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
+	pCamera->SetPlayer(pAirplanePlayer);
+	pAirplanePlayer->SetCamera(pCamera);
 
-		pCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-		pCamera->SetTimeLag(0.25f);
-		pCamera->SetOffset(XMFLOAT3(0.0f, 105.0f, -140.0f));
-		pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
-		pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
-		pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
-		pCamera->SetPlayer(pAirplanePlayer);
-		pAirplanePlayer->SetCamera(pCamera);
+	m_pPlayer = pAirplanePlayer;
+	m_pPlayer->Initialize();
 
-		auto pGunship = RESOURCE->CopyGameObject("Gunship");
-		pGunship->Rotate(15.0f, 0.0f, 0.0f);
-		pGunship->SetScale(8.5f, 8.5f, 8.5f);
-		pAirplanePlayer->SetChild(pGunship);
+	std::shared_ptr<TexturedSprite> pTextureSprite = std::make_shared<TexturedSprite>("intro", 0.f, 0.f, 0.2f, 0.2f);
+	std::shared_ptr<TextSprite> pTextSprite1 = std::make_shared<TextSprite>("MCMHSEX", 0.f, 0.2f, 0.5f, 0.5f);
+	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("3D Game Programming", 0.0f, 0.5f, 1.f, 0.8f);
 
+	m_pSprites.push_back(pTextureSprite);
+	m_pSprites.push_back(pTextSprite1);
+	m_pSprites.push_back(pTextSprite2);
 
-		m_pPlayer = pAirplanePlayer;
-		m_pPlayer->Initialize();
-
-		m_pPlayer->SetFriction(20.5f);
-		m_pPlayer->SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		m_pPlayer->SetMaxVelocityXZ(125.5f);
-		m_pPlayer->SetMaxVelocityY(140.0f);
-		m_pPlayer->SetPosition(XMFLOAT3(0.0f, 500.0f, -500.0f));
-	}
-
-	int xObjects = 10;
-	int yObjects = 10;
-	int zObjects = 10;
-	int i = 0;
-
-	m_nMaxObjects = (xObjects * 2 + 1) * (yObjects * 2 + 1) * (zObjects * 2 + 1);
-
-	float fxPitch = 200.f;
-	float fyPitch = 100.f;
-	float fzPitch = 200.f;
-	XMFLOAT3 xmf3Pivot = XMFLOAT3(0.0f, 0.0f, 0.0f);
-
-	m_pPreLoadedObjects.resize(6);
-
-	// Apache
-	m_pPreLoadedObjects[0].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<ApacheObject> pObject = std::make_shared<ApacheObject>();
-				pObject->SetChild(RESOURCE->CopyGameObject("Apache"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(1.5f, 1.5f, 1.5f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[0].push_back(pObject);
-			}
-		}
-	}
-
-	// Gunship
-	m_pPreLoadedObjects[1].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<GunshipObject> pObject = std::make_shared<GunshipObject>();
-				pObject->SetChild(RESOURCE->CopyGameObject("Gunship"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(8.5f, 8.5f, 8.5f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[1].push_back(pObject);
-			}
-		}
-	}
-
-	// SuperCobra
-	m_pPreLoadedObjects[2].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<SuperCobraObject> pObject = std::make_shared<SuperCobraObject>();
-				pObject->SetChild(RESOURCE->CopyGameObject("SuperCobra"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(10.0f, 10.0f, 10.0f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[2].push_back(pObject);
-			}
-		}
-	}
-
-	// Hummer
-	m_pPreLoadedObjects[3].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<HummerObject> pObject = std::make_shared<HummerObject>();
-				pObject->SetChild(RESOURCE->CopyGameObject("Hummer"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(18.0f, 18.0f, 18.0f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[3].push_back(pObject);
-			}
-		}
-	}
-
-	// M26
-	m_pPreLoadedObjects[4].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<M26Object> pObject = std::make_shared<M26Object>();
-				pObject->SetChild(RESOURCE->CopyGameObject("M26"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(18.0f, 18.0f, 18.0f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[4].push_back(pObject);
-			}
-		}
-	}
-
-	// Mi24
-	m_pPreLoadedObjects[5].reserve(m_nMaxObjects);
-	for (int z = 0; z <= (2 * zObjects); ++z) {
-		for (int y = -yObjects; y <= yObjects; ++y) {
-			for (int x = -xObjects; x <= xObjects; ++x) {
-				std::shared_ptr<Mi24Object> pObject = std::make_shared<Mi24Object>();
-				pObject->SetChild(RESOURCE->CopyGameObject("Mi24"));
-				pObject->Initialize();
-
-				XMFLOAT3 xmf3Position = Vector3::Add(xmf3Pivot, XMFLOAT3(fxPitch * x, fyPitch * y, fzPitch * z));
-				pObject->SetPosition(xmf3Position);
-				pObject->SetScale(8.f, 8.f, 8.f);
-				pObject->Rotate(0.0f, -90.0f, 0.0f);
-				m_pPreLoadedObjects[5].push_back(pObject);
-			}
-		}
-	}
-
-	//m_pGameObjects.reserve(m_nInstance);
-	//std::copy(m_pPreLoadedObjects[m_nObjectSelected].begin(), m_pPreLoadedObjects[m_nObjectSelected].end(), std::back_inserter(m_pGameObjects));
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void Scene::ReleaseUploadBuffers()
 {
-	m_pPlayer->ReleaseUploadBuffers();
-
-	for (auto& objs : m_pPreLoadedObjects) {
-		for (auto& pObj : objs) {
-			pObj->ReleaseUploadBuffers();
-		}
+	if (m_pPlayer) {
+		m_pPlayer->ReleaseUploadBuffers();
 	}
+
+	for (auto& pObj : m_pGameObjects) {
+		pObj->ReleaseUploadBuffers();
+	}
+
 }
 
 bool Scene::ProcessInput(UCHAR* pKeysBuffer)
 {
-	if (pKeysBuffer['1'] & 0xF0)	m_nObjectSelected = 0;
-	if (pKeysBuffer['2'] & 0xF0)	m_nObjectSelected = 1;
-	if (pKeysBuffer['3'] & 0xF0)	m_nObjectSelected = 2;
-	if (pKeysBuffer['4'] & 0xF0)	m_nObjectSelected = 3;
-	if (pKeysBuffer['5'] & 0xF0)	m_nObjectSelected = 4;
-	if (pKeysBuffer['6'] & 0xF0)	m_nObjectSelected = 5;
-
-	if (pKeysBuffer[VK_RIGHT]	& 0xF0)		m_nObjectCount += 1;
-	if (pKeysBuffer[VK_LEFT]	& 0xF0)		m_nObjectCount -= 1;
-	if (pKeysBuffer[VK_UP]		& 0xF0)		m_nObjectCount += 10;
-	if (pKeysBuffer[VK_DOWN]	& 0xF0)		m_nObjectCount -= 10;
-	if (pKeysBuffer[VK_HOME]	& 0xF0)		m_nObjectCount += 100;
-	if (pKeysBuffer[VK_END]		& 0xF0)		m_nObjectCount -= 100;
-	if (pKeysBuffer[VK_PRIOR]	& 0xF0)		m_nObjectCount += 1000;
-	if (pKeysBuffer[VK_NEXT]	& 0xF0)		m_nObjectCount -= 1000;
-	
-	m_nObjectCount = std::clamp(m_nObjectCount, 0, m_nMaxObjects);
-
 	return false;
 }
 
@@ -280,16 +65,10 @@ void Scene::Update(float fTimeElapsed)
 		m_pPlayer->Update(fTimeElapsed);
 	}
 	
-	for (auto& pObj : m_pPreLoadedObjects[m_nObjectSelected] | std::views::take(m_nObjectCount)) {
+	for (auto& pObj : m_pGameObjects) {
 		pObj->Update(fTimeElapsed);
 	}
 
-	if (m_pLights.size() != 0)
-	{
-		std::shared_ptr<SpotLight> pSpotLight = static_pointer_cast<SpotLight>(m_pLights[1]);
-		pSpotLight->m_xmf3Position = m_pPlayer->GetPosition();
-		pSpotLight->m_xmf3Direction = m_pPlayer->GetLookVector();
-	}
 }
 
 void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
@@ -319,15 +98,23 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 		m_pPlayer->AddToRenderMap();
 	}
 
-	for (auto& pObj : m_pPreLoadedObjects[m_nObjectSelected] | std::views::take(m_nObjectCount)) {
+	for (auto& pObj : m_pGameObjects) {
 		pObj->UpdateTransform();
 		pObj->AddToRenderMap();
+	}
+
+	for (auto& pSprite : m_pSprites) {
+		pSprite->AddToUI(0);
 	}
 }
 
 void Scene::CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	m_LightCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_SCENE_DATA>::value, true);
+
+	for (auto& pSprite : m_pSprites) {
+		pSprite->CreateShaderVariables(pd3dDevice, pd3dCommandList);
+	}
 }
 
 void Scene::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
@@ -341,11 +128,16 @@ void Scene::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandLi
 
 	data.globalAmbientLight = m_xmf4GlobalAmbient;
 
-	m_LightCBuffer.UpdateData(pd3dCommandList, &data);
+	m_LightCBuffer.UpdateData(&data);
 }
 
 bool Scene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
+	POINT ptClicked;
+	ptClicked.x = HIWORD(lParam);
+	ptClicked.y = LOWORD(lParam);
+
+
 	return false;
 }
 

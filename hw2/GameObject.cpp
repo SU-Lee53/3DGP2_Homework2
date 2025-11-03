@@ -257,6 +257,34 @@ std::vector<MATERIALLOADINFO> GameObject::LoadMaterialsInfoFromFile(ComPtr<ID3D1
 		{
 			inFile.read((char*)(&materials[materialIndex].fGlossyReflection), sizeof(float));
 		}
+		else if (strRead == "<AlbedoMap>:")
+		{
+
+		}
+		else if (strRead == "<SpecularMap>:")
+		{
+
+		}
+		else if (strRead == "<NormalMap>:")
+		{
+
+		}
+		else if (strRead == "<MetallicMap>:")
+		{
+
+		}
+		else if (strRead == "<EmissionMap>:")
+		{
+
+		}
+		else if (strRead == "<DetailAlbedoMap>:")
+		{
+
+		}
+		else if (strRead == "<DetailNormalMap>:")
+		{
+
+		}
 		else if (strRead == "</Materials>")
 		{
 			break;

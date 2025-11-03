@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "Material.h"
 #include "StructuredBuffer.h"
+#include "UIManager.h"
 
 RenderManager::RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {

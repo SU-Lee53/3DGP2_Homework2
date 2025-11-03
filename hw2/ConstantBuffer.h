@@ -10,7 +10,7 @@ public:
 	void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiElementSize, bool bCreateView = false);
 
 	template<typename T>
-	void UpdateData(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, T* pData);
+	void UpdateData(T* pData) const;
 	void SetBufferToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex) const;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle() const;
@@ -24,7 +24,7 @@ private:
 };
 
 template<typename T>
-inline void ConstantBuffer::UpdateData(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, T* pData)
+inline void ConstantBuffer::UpdateData(T* pData) const
 {
 	::memcpy(m_pMappedPtr, pData, sizeof(T));
 }

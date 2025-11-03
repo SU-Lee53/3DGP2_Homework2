@@ -67,7 +67,7 @@ void Camera::UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommand
 		data.m_xmf3Position = m_xmf3Position;
 	}
 
-	m_CameraCBuffer.UpdateData(pd3dCommandList, &data);
+	m_CameraCBuffer.UpdateData(&data);
 }
 
 void Camera::SetCameraToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex)

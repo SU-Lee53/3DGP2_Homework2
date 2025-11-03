@@ -3,6 +3,8 @@
 #include "Scene.h"
 #include "ResourceManager.h"
 #include "RenderManager.h"
+#include "UIManager.h"
+#include "TextureManager.h"
 
 class Scene;
 
@@ -35,8 +37,10 @@ public:
 	POINT					m_ptOldCursorPos;
 	TSTRING					m_tstrFrameRate;
 
-	static std::unique_ptr<ResourceManager> g_pResourceManager;
-	static std::unique_ptr<RenderManager> g_pRenderManager;
+	static std::unique_ptr<ResourceManager>		g_pResourceManager;
+	static std::unique_ptr<RenderManager>		g_pRenderManager;
+	static std::unique_ptr<UIManager>			g_pUIManager;
+	static std::unique_ptr<TextureManager>		g_pTextureManager;
 
 #pragma region D3D
 private:
@@ -111,3 +115,5 @@ private:
 
 #define RESOURCE GameFramework::g_pResourceManager
 #define RENDER GameFramework::g_pRenderManager
+#define UI GameFramework::g_pUIManager
+#define TEXTURE GameFramework::g_pTextureManager

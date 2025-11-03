@@ -1,6 +1,7 @@
 #pragma once
 #include "Light.h"
 #include "Player.h"
+#include "Sprite.h"
 
 #define MAX_LIGHTS 16
 
@@ -15,13 +16,13 @@ public:
 	Scene(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
 public:
-	void BuildDefaultLightsAndMaterials();
-	void BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
-	void ReleaseUploadBuffers();
+	virtual void BuildDefaultLightsAndMaterials();
+	virtual void BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual void ReleaseUploadBuffers();
 
-	bool ProcessInput(UCHAR* pKeysBuffer);
-	void Update(float fTimeElapsed);
-	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual bool ProcessInput(UCHAR* pKeysBuffer);
+	virtual void Update(float fTimeElapsed);
+	virtual void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
 	virtual void CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
@@ -37,12 +38,13 @@ public:
 	std::shared_ptr<Camera> GetCamera() const;
 	const ConstantBuffer& GetCBuffer() const { return m_LightCBuffer; }
 	std::shared_ptr<Player> GetPlayer() const;
-	UINT GetObjectCount() const { return m_nObjectCount; }
 
 private:
 	std::shared_ptr<Player>						m_pPlayer;
-	//std::vector<std::shared_ptr<GameObject>>	m_pGameObjects;
+	std::vector<std::shared_ptr<GameObject>>	m_pGameObjects;
 	std::vector<std::shared_ptr<Light>>			m_pLights;
+	std::vector<std::shared_ptr<Sprite>>		m_pSprites;
+
 	XMFLOAT4									m_xmf4GlobalAmbient;
 
 	ConstantBuffer								m_LightCBuffer;
@@ -52,12 +54,5 @@ private:
 
 public:
 	const static UINT g_uiDescriptorCountPerScene = 2;	// Camera + Lights
-
-private:
-	// Preloaded Instances
-	std::vector<std::vector<std::shared_ptr<GameObject>>> m_pPreLoadedObjects;
-	int m_nMaxObjects = 0;
-	int m_nObjectSelected = 0;
-	int m_nObjectCount = 100;
 };
 

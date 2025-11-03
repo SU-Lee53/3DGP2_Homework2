@@ -36,23 +36,6 @@ struct std::hash<INSTANCE_KEY> {
 };
 
 
-// Shader 에 넘길 SHADER_VISIBLE 한 m_pd3dDescriptorHeap은 아래처럼 구성
-// SRV 는 인스턴싱용 StructuredBuffer
-// CBV 는 SubSet 별 Material 정보 (Mesh 마다 갯수 가 다름) -> SubSet 순서대로 기록되도록
-//  
-//  
-//                    +---------> m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart()
-//                    |  
-//                    +-----+-----+------+-----++-----+-----++-----++-----+-----++-----++-----++-----++-----+----- 
-//  Descriptor 구성   | CBV | CBV | SRV  | CBV || CBV | ... || CBV || CBV | ... || CBV || CBV || CBV || CBV | ...
-//                    +-----+-----+------+-----++-----+-----++-----++-----+-----++-----++-----++-----++-----+-----
-//    Resource 단위   |   Scene   | Inst |      Mesh 1       |      Mesh 2       |          Mesh 3          | ...
-//                    +-----------+------+-------------------+-------------------+--------------------------+-----
-//                          |
-//                          +-----------> 여기는 Scene::Render() 에서 복사함
-//
-
-
 class RenderManager {
 public:
 	RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);

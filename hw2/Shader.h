@@ -29,6 +29,9 @@ protected:
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC	m_d3dPipelineStateDesc;
 
+public:
+	static D3D12_SHADER_BYTECODE CompileShader(const std::wstring& wstrFileName, const std::string& pszShaderName, const std::string& pszShaderProfile, ID3DBlob** ppd3dShaderBlob);
+
 };
 
 class IlluminatedShader : public Shader {

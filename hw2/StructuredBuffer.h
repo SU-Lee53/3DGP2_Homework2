@@ -21,10 +21,10 @@ public:
 	void UpdateData(std::vector<T> data, UINT offset = 0);
 
 	template<typename T>
-	void UpdateData(const T& const data, UINT offset, UINT nDatas);
+	void UpdateData(const T& data, UINT offset, UINT nDatas);
 	
 	template<typename T>
-	void UpdateData(const T& const data, UINT index);
+	void UpdateData(const T& data, UINT index);
 
 	void SetBufferToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex) const;
 
@@ -58,7 +58,7 @@ inline void StructuredBuffer::UpdateData(std::vector<T> data, UINT offset)
 }
 
 template<typename T>
-inline void StructuredBuffer::UpdateData(const T& const data, UINT offset, UINT nDatas)
+inline void StructuredBuffer::UpdateData(const T& data, UINT offset, UINT nDatas)
 {
 	assert(offset + nDatas < m_nDatas);
 	T* pMappedPtr = reinterpret_cast<T*>(m_pMappedPtr);
@@ -66,7 +66,7 @@ inline void StructuredBuffer::UpdateData(const T& const data, UINT offset, UINT 
 }
 
 template<typename T>
-inline void StructuredBuffer::UpdateData(const T& const data, UINT index)
+inline void StructuredBuffer::UpdateData(const T& data, UINT index)
 {
 	assert(index < m_nDatas);
 	T* pMappedPtr = reinterpret_cast<T*>(m_pMappedPtr);

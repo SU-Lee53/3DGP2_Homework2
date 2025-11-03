@@ -7,8 +7,10 @@ long GameFramework::g_nClientWidth = 0;
 long GameFramework::g_nClientHeight = 0;
 UINT GameFramework::g_uiDescriptorHandleIncrementSize = 0;
 
-std::unique_ptr<ResourceManager> GameFramework::g_pResourceManager = nullptr;
-std::unique_ptr<RenderManager> GameFramework::g_pRenderManager = nullptr;
+std::unique_ptr<ResourceManager>	GameFramework::g_pResourceManager = nullptr;
+std::unique_ptr<RenderManager>		GameFramework::g_pRenderManager = nullptr;
+std::unique_ptr<UIManager>			GameFramework::g_pUIManager = nullptr;
+std::unique_ptr<TextureManager>		GameFramework::g_pTextureManager = nullptr;
 
 GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT uiHeight, bool bEnableDebugLayer)
 {
@@ -33,7 +35,11 @@ GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT 
 	m_tstrFrameRate = L"3DGP2-Homework1";
 
 	g_pResourceManager = std::make_unique<ResourceManager>();
+	g_pTextureManager = std::make_unique<TextureManager>(m_pd3dDevice);
 	g_pRenderManager = std::make_unique<RenderManager>(m_pd3dDevice, m_pd3dCommandList);
+
+	g_pUIManager = std::make_unique<UIManager>(m_pd3dDevice);
+
 	g_uiDescriptorHandleIncrementSize = m_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	BuildObjects();
@@ -50,6 +56,8 @@ void GameFramework::BuildObjects()
 
 	// Build
 	{
+		g_pTextureManager->LoadGameTextures(m_pd3dCommandList);
+
 		m_pScene = std::make_shared<Scene>(m_pd3dDevice, m_pd3dCommandList);
 		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
 	}
@@ -61,6 +69,8 @@ void GameFramework::BuildObjects()
 	WaitForGPUComplete();
 
 	m_pScene->ReleaseUploadBuffers();
+
+	g_pTextureManager->ReleaseUploadBuffers();
 }
 
 void GameFramework::Update()
@@ -76,6 +86,7 @@ void GameFramework::Update()
 void GameFramework::Render()
 {
 	RENDER->Clear();
+	UI->Clear();
 
 	RenderBegin();
 
@@ -84,6 +95,7 @@ void GameFramework::Render()
 		m_pScene->Render(m_pd3dDevice, m_pd3dCommandList);
 
 		RENDER->Render(m_pd3dCommandList);
+		UI->Render(m_pd3dCommandList);
 	}
 
 	RenderEnd();
@@ -93,7 +105,7 @@ void GameFramework::Render()
 	TSTRING tstrFrameRate;
 	m_GameTimer.GetFrameRate(L"3DGP-Homework1", tstrFrameRate);
 
-	tstrFrameRate = std::format(L"{} Mesh Count : {} Instance Count : {} DrawCalls : {}", tstrFrameRate, RENDER->GetMeshCount(), m_pScene->GetObjectCount(), RENDER->GetDrawCallCount());
+	tstrFrameRate = std::format(L"{}", tstrFrameRate);
 
 	::SetWindowText(m_hWnd, tstrFrameRate.data());
 }

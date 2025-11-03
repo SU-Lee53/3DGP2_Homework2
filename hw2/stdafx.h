@@ -42,6 +42,7 @@ using TSTRING = std::string;
 #include <d3d12.h>
 #include <dxgi1_4.h>
 #include <dxgidebug.h>
+#include "d3dx12.h"
 
 // D3DCompiler
 #include <d3dcompiler.h>
@@ -52,6 +53,10 @@ using TSTRING = std::string;
 #include <DirectXColors.h>
 #include <DirectXCollision.h>
 
+// DirectXTex
+#include "DDSTextureLoader12.h"
+#include "WICTextureLoader12.h"
+
 using namespace Microsoft::WRL;
 using namespace DirectX;
 
@@ -61,6 +66,7 @@ using namespace DirectX;
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "dxguid.lib")
 
+#include "Utility.h"
 #include "ConstantBuffer.h"
 #include "StructuredBuffer.h"
 #include "GameFramework.h"

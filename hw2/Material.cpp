@@ -39,7 +39,7 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 		cbData.xmf4Specular = m_pMaterialColors->xmf4Specular;
 		cbData.xmf4Emissive = m_pMaterialColors->xmf4Emissive;
 	}
-	m_MaterialCBuffer.UpdateData(pd3dCommandList, &cbData);
+	m_MaterialCBuffer.UpdateData(&cbData);
 }
 
 void Material::SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex)
