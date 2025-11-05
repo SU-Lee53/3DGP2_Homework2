@@ -25,6 +25,7 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 		cbData.xmf4Diffuse = m_xmf4AlbedoColor;
 		cbData.xmf4Specular = m_xmf4SpecularColor;
 		cbData.xmf4Emissive = m_xmf4EmissiveColor;
+		cbData.nMaterialType = m_nType;
 	}
 	m_MaterialCBuffer.UpdateData(&cbData);
 }

@@ -153,6 +153,10 @@ void TerrainObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 	//XMStoreFloat4(&m_xmOBB.Orientation, XMQuaternionRotationRollPitchYaw(0.f, 0.f, 0.f));
 	//m_xmOBB.Center = XMFLOAT3{ GetWidth() * 0.5f, GetHeight(GetWidth() * 0.5, GetLength() * 0.5f), GetLength() * 0.5f };
 
+
+
+
+
 }
 
 void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)

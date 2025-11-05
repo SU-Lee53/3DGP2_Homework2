@@ -13,6 +13,7 @@ protected:
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader();
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
 
 	D3D12_SHADER_BYTECODE CompileShaderFromFile(const std::wstring& wstrFileName, const std::string& pszShaderName, const std::string& pszShaderProfile, ID3DBlob** ppd3dShaderBlob);
@@ -23,11 +24,8 @@ protected:
 	ComPtr<ID3DBlob> m_pd3dVertexShaderBlob = nullptr;
 	ComPtr<ID3DBlob> m_pd3dPixelShaderBlob	= nullptr;
 
-	ComPtr<ID3D12PipelineState>	m_pd3dPipelineState = nullptr;
-
-	std::vector<D3D12_INPUT_ELEMENT_DESC> m_d3dInputElements;
-
-	D3D12_GRAPHICS_PIPELINE_STATE_DESC	m_d3dPipelineStateDesc;
+	std::vector<ComPtr<ID3D12PipelineState>>	m_pd3dPipelineStates{};
+	std::vector<D3D12_INPUT_ELEMENT_DESC>		m_d3dInputElements;
 
 public:
 	static D3D12_SHADER_BYTECODE CompileShader(const std::wstring& wstrFileName, const std::string& pszShaderName, const std::string& pszShaderProfile, ID3DBlob** ppd3dShaderBlob);
@@ -35,6 +33,18 @@ public:
 };
 
 class IlluminatedShader : public Shader {
+public:
+	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;
+
+protected:
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout() override;
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader() override;
+
+};
+
+class TerrainShader : public Shader {
 public:
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;
 

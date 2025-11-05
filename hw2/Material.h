@@ -18,7 +18,7 @@ struct CB_MATERIAL_DATA {
 	XMFLOAT4 xmf4Diffuse;
 	XMFLOAT4 xmf4Specular;
 	XMFLOAT4 xmf4Emissive;
-	UINT nTextureMask;
+	UINT nMaterialType;
 };
 
 class Material {

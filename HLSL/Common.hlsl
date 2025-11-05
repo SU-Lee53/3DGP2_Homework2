@@ -65,6 +65,7 @@ struct MATERIAL
     float4 m_cDiffuse;
     float4 m_cSpecular; //a = power
     float4 m_cEmissive;
+    uint m_textureMask;
 };
 
 cbuffer cbGameObjectData : register(b2)
@@ -80,6 +81,14 @@ Texture2D gtxtMetaillicMap     : register(t7);
 Texture2D gtxtEmissionMap     : register(t8);
 Texture2D gtxtDetailAlbedoMap     : register(t9);
 Texture2D gtxtDetailNormalMap     : register(t10);
+
+#define MATERIAL_TYPE_ALBEDO_MAP = 0x01,
+#define MATERIAL_TYPE_SPECULAR_MAP = 0x02,
+#define MATERIAL_TYPE_NORMAL_MAP = 0x04,
+#define MATERIAL_TYPE_METALLIC_MAP = 0x08,
+#define MATERIAL_TYPE_EMISSION_MAP = 0x10,
+#define MATERIAL_TYPE_DETAIL_ALBEDO_MAP = 0x20,
+#define MATERIAL_TYPE_DETAIL_NORMAL_MAP = 0x40
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Instancing Data 
