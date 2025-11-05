@@ -11,7 +11,7 @@ Texture::~Texture()
 }
 
 void Texture::LoadTextureFromDDSFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
-	std::wstring wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources)
+	const std::wstring& wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources)
 {
 	HRESULT hr;
 	DDS_ALPHA_MODE ddsAlphaMode = DDS_ALPHA_MODE_UNKNOWN;
@@ -37,7 +37,7 @@ void Texture::LoadTextureFromDDSFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3
 }
 
 void Texture::LoadTextureFromWICFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
-	std::wstring wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources)
+	const std::wstring& wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources)
 {
 	HRESULT hr;
 
@@ -100,7 +100,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture::GetSRVDesc() const
 	return d3dShaderResourceViewDesc;
 }
 
-void Texture::LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::wstring wstrTextureName, UINT nResourceType)
+void Texture::LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::wstring& wstrTextureName, UINT nResourceType)
 {
 	namespace fs = std::filesystem;
 	HRESULT hr;
@@ -111,6 +111,7 @@ void Texture::LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12
 	fs::path texPath{ g_wstrTexturePathBase + wstrTextureName };
 	if (!fs::exists(texPath)) {
 		OutputDebugStringA(std::format("{} - {} : {} : {}\n", __FILE__, __LINE__, "Texture file not exist", texPath.string()).c_str());
+		__debugbreak();
 		return;
 	}
 

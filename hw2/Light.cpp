@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "Light.h"
 
-CB_LIGHT_DATA PointLight::MakeLightData()
+LightData PointLight::MakeLightData()
 {
-	CB_LIGHT_DATA data{};
+	LightData data{};
 	{
 		data.nType = LIGHT_TYPE_POINT_LIGHT;
 		data.bEnable = TRUE;
@@ -20,9 +20,9 @@ CB_LIGHT_DATA PointLight::MakeLightData()
 	return data;
 }
 
-CB_LIGHT_DATA SpotLight::MakeLightData()
+LightData SpotLight::MakeLightData()
 {
-	CB_LIGHT_DATA data{};
+	LightData data{};
 	{
 		data.nType = LIGHT_TYPE_SPOT_LIGHT;
 		data.bEnable = TRUE;
@@ -43,9 +43,9 @@ CB_LIGHT_DATA SpotLight::MakeLightData()
 	return data;
 }
 
-CB_LIGHT_DATA DirectionalLight::MakeLightData()
+LightData DirectionalLight::MakeLightData()
 {
-	CB_LIGHT_DATA data{};
+	LightData data{};
 	{
 		data.nType = LIGHT_TYPE_DIRECTIONAL_LIGHT;
 		data.bEnable = TRUE;

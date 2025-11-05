@@ -14,17 +14,17 @@ public:
 	virtual ~Texture();
 
 public:
-	void LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::wstring wstrTextureName, UINT nResourceType);
+	void LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::wstring& wstrTextureName, UINT nResourceType);
 	void ReleaseUploadBuffers();
 
 private:
 	void LoadTextureFromDDSFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
-		std::wstring wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources);
+		const std::wstring& wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources);
 	void LoadTextureFromWICFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
-		std::wstring wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources);
+		const std::wstring& wstrPath, std::unique_ptr<uint8_t[]>& ddsData, std::vector<D3D12_SUBRESOURCE_DATA>& subResources);
 
 public:
-	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVHandle() const { return m_SRVCPUDescriptorHandle; }
+	D3D12_CPU_DESCRIPTOR_HANDLE GetSRVCPUHandle() const { return m_SRVCPUDescriptorHandle; }
 
 public:
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc() const;

@@ -1,5 +1,7 @@
 #include "stdafx.h"
 #include "GameFramework.h"
+#include "IntroScene.h"
+#include "GameScene.h"
 
 bool GameFramework::g_bMsaa4xEnable = false;
 UINT GameFramework::g_nMsaa4xQualityLevels = 0;
@@ -7,15 +9,20 @@ long GameFramework::g_nClientWidth = 0;
 long GameFramework::g_nClientHeight = 0;
 UINT GameFramework::g_uiDescriptorHandleIncrementSize = 0;
 
+HINSTANCE  GameFramework::g_hInstance = 0;
+HWND		GameFramework::g_hWnd = 0;
+
 std::unique_ptr<ResourceManager>	GameFramework::g_pResourceManager = nullptr;
 std::unique_ptr<RenderManager>		GameFramework::g_pRenderManager = nullptr;
 std::unique_ptr<UIManager>			GameFramework::g_pUIManager = nullptr;
 std::unique_ptr<TextureManager>		GameFramework::g_pTextureManager = nullptr;
 
+std::shared_ptr<Scene>				GameFramework::g_pCurrentScene = nullptr;
+
 GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT uiHeight, bool bEnableDebugLayer)
 {
-	m_hWnd = hWnd;
-	m_hInstance = hInstance;
+	g_hWnd = hWnd;
+	g_hInstance = hInstance;
 	m_bEnableDebugLayer = bEnableDebugLayer;
 
 	g_nClientWidth = uiWidth;
@@ -32,7 +39,7 @@ GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT 
 	m_d3dViewport = { 0.f, 0.f, (float)g_nClientWidth, (float)g_nClientHeight, 0.f, 1.f };
 	m_d3dScissorRect = { 0, 0, (LONG)g_nClientWidth, (LONG)g_nClientHeight };
 
-	m_tstrFrameRate = L"3DGP2-Homework1";
+	m_tstrFrameRate = L"3DGP2-Homework2";
 
 	g_pResourceManager = std::make_unique<ResourceManager>();
 	g_pTextureManager = std::make_unique<TextureManager>(m_pd3dDevice);
@@ -58,8 +65,15 @@ void GameFramework::BuildObjects()
 	{
 		g_pTextureManager->LoadGameTextures(m_pd3dCommandList);
 
-		m_pScene = std::make_shared<Scene>(m_pd3dDevice, m_pd3dCommandList);
-		m_pScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
+		std::shared_ptr<IntroScene> pIntroScene = std::make_shared<IntroScene>();
+		pIntroScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
+		m_pScenes.push_back(pIntroScene);
+
+		std::shared_ptr<GameScene> pGameScene = std::make_shared<GameScene>();
+		pGameScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
+		m_pScenes.push_back(pGameScene);
+
+		g_pCurrentScene = m_pScenes[0];
 	}
 
 	m_pd3dCommandList->Close();
@@ -68,7 +82,9 @@ void GameFramework::BuildObjects()
 
 	WaitForGPUComplete();
 
-	m_pScene->ReleaseUploadBuffers();
+	for (auto& pScene : m_pScenes) {
+		pScene->ReleaseUploadBuffers();
+	}
 
 	g_pTextureManager->ReleaseUploadBuffers();
 }
@@ -79,7 +95,7 @@ void GameFramework::Update()
 	m_GameTimer.Tick(0.0f);
 
 	ProcessInput();
-	m_pScene->Update(m_GameTimer.GetTimeElapsed());
+	g_pCurrentScene->Update(m_GameTimer.GetTimeElapsed());
 
 }
 
@@ -92,7 +108,7 @@ void GameFramework::Render()
 
 	{
 		// TODO: Render Logic
-		m_pScene->Render(m_pd3dDevice, m_pd3dCommandList);
+		g_pCurrentScene->Render(m_pd3dDevice, m_pd3dCommandList);
 
 		RENDER->Render(m_pd3dCommandList);
 		UI->Render(m_pd3dCommandList);
@@ -103,11 +119,11 @@ void GameFramework::Render()
 	MoveToNextFrame();
 
 	TSTRING tstrFrameRate;
-	m_GameTimer.GetFrameRate(L"3DGP-Homework1", tstrFrameRate);
+	m_GameTimer.GetFrameRate(L"3DGP-Homework2", tstrFrameRate);
 
 	tstrFrameRate = std::format(L"{}", tstrFrameRate);
 
-	::SetWindowText(m_hWnd, tstrFrameRate.data());
+	::SetWindowText(g_hWnd, tstrFrameRate.data());
 }
 
 void GameFramework::CreateFactory()
@@ -205,7 +221,7 @@ void GameFramework::CreateSwapChain()
 		dxgiSwapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
 		dxgiSwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		dxgiSwapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
-		dxgiSwapChainDesc.OutputWindow = m_hWnd;
+		dxgiSwapChainDesc.OutputWindow = g_hWnd;
 		dxgiSwapChainDesc.SampleDesc.Count = (g_bMsaa4xEnable) ? 4 : 1;
 		dxgiSwapChainDesc.SampleDesc.Quality = (g_bMsaa4xEnable) ? (g_nMsaa4xQualityLevels - 1) : 0;
 		dxgiSwapChainDesc.Windowed = TRUE;
@@ -225,7 +241,7 @@ void GameFramework::CreateSwapChain()
 
 	m_nSwapChainBufferIndex = m_pdxgiSwapChain->GetCurrentBackBufferIndex();
 
-	m_pdxgiFactory->MakeWindowAssociation(m_hWnd, DXGI_MWA_NO_ALT_ENTER);
+	m_pdxgiFactory->MakeWindowAssociation(g_hWnd, DXGI_MWA_NO_ALT_ENTER);
 
 	CreateRenderTargetViews();
 
@@ -447,12 +463,12 @@ void GameFramework::ProcessInput()
 	static UCHAR pKeysBuffer[256];
 	bool bProcessedByScene = false;
 
-	if (GetKeyboardState(pKeysBuffer) && m_pScene) {
-		bProcessedByScene = m_pScene->ProcessInput(pKeysBuffer);
+	if (GetKeyboardState(pKeysBuffer) && g_pCurrentScene) {
+		bProcessedByScene = g_pCurrentScene->ProcessInput(pKeysBuffer);
 	}
 
 	if (!bProcessedByScene) {
-		auto pPlayer = m_pScene->GetPlayer();
+		auto pPlayer = g_pCurrentScene->GetPlayer();
 
 		DWORD dwDirection = 0;
 		if (pKeysBuffer['W'] & 0xF0)	dwDirection |= MOVE_DIR_FORWARD;
@@ -464,7 +480,7 @@ void GameFramework::ProcessInput()
 
 		float cxDelta = 0.0f, cyDelta = 0.0f;
 		POINT ptCursorPos;
-		if (GetCapture() == m_hWnd) {
+		if (GetCapture() == g_hWnd) {
 			SetCursor(NULL);
 			GetCursorPos(&ptCursorPos);
 			cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / 3.0f;
@@ -486,8 +502,8 @@ void GameFramework::ProcessInput()
 
 void GameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) {
-		m_pScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
+	if (g_pCurrentScene) {
+		g_pCurrentScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 	}
 
 	switch (nMessageID) {
@@ -509,8 +525,8 @@ void GameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM 
 
 void GameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
 {
-	if (m_pScene) {
-		m_pScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
+	if (g_pCurrentScene) {
+		g_pCurrentScene->OnProcessingKeyboardMessage(hWnd, nMessageID, wParam, lParam);
 	}
 
 	switch (nMessageID) {

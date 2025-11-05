@@ -5,6 +5,8 @@
 #include "StructuredBuffer.h"
 #include "UIManager.h"
 
+ComPtr<ID3D12RootSignature> RenderManager::g_pd3dRootSignature = nullptr;
+
 RenderManager::RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	m_pd3dDevice = pd3dDevice;
@@ -24,6 +26,8 @@ RenderManager::RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	heapDesc.NodeMask = 0;
 
 	m_pd3dDevice->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(m_pd3dDescriptorHeap.GetAddressOf()));
+
+	CreateGlobalRootSignature(pd3dDevice);
 }
 
 void RenderManager::Add(std::shared_ptr<GameObject> pGameObject)
@@ -48,15 +52,43 @@ void RenderManager::Add(std::shared_ptr<GameObject> pGameObject)
 
 void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
-	UINT uiSBufferOffset = 0;
-	UINT uiDescriptorOffset = Scene::g_uiDescriptorCountPerScene;	// Per Scene 정보 2개 넣고 시작
+	pd3dCommandList->SetGraphicsRootSignature(g_pd3dRootSignature.Get());
+	RENDER->SetDescriptorHeapToPipeline(pd3dCommandList);
+	CUR_SCENE->UpdateShaderVariable(pd3dCommandList);
 
 	D3D12_CPU_DESCRIPTOR_HANDLE d3dCPUHandle = m_pd3dDescriptorHeap->GetCPUDescriptorHandleForHeapStart();
-	d3dCPUHandle.ptr += (uiDescriptorOffset * GameFramework::g_uiDescriptorHandleIncrementSize);
-
 	D3D12_GPU_DESCRIPTOR_HANDLE d3dGPUHandle = m_pd3dDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
-	d3dGPUHandle.ptr += (uiDescriptorOffset * GameFramework::g_uiDescriptorHandleIncrementSize);
+	DescriptorHandle descHandle{ d3dCPUHandle, d3dGPUHandle };
 
+
+	// Per Scene Descriptor 에 복사
+	auto pCamera = CUR_SCENE->GetPlayer()->GetCamera();
+	pCamera->UpdateShaderVariables(pd3dCommandList);
+	pCamera->SetViewportsAndScissorRects(pd3dCommandList);
+
+	m_pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle,
+		pCamera->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	m_pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle,
+		CUR_SCENE->GetLightCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dCommandList->SetGraphicsRootDescriptorTable(0, descHandle.gpuHandle);
+	descHandle.gpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	RenderObjects(pd3dCommandList, descHandle);
+
+}
+
+void RenderManager::SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const
+{
+	pd3dCommandList->SetDescriptorHeaps(1, m_pd3dDescriptorHeap.GetAddressOf());
+}
+
+void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
+{
+	UINT uiSBufferOffset = 0;
 	for (auto&& [instanceKey, instanceData] : m_InstanceDatas) {
 		m_InstanceDataSBuffer.UpdateData(instanceData, uiSBufferOffset);
 		uiSBufferOffset += instanceData.size();
@@ -68,12 +100,12 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 	// Instance 행렬 정보를 한번에 GPU에 바인딩
 #ifdef INSTANCING_USING_DESCRIPTOR_TABLE
-	m_pd3dDevice->CopyDescriptorsSimple(1, d3dCPUHandle, 
+	m_pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
 		m_InstanceDataSBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	d3dCPUHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
-	pd3dCommandList->SetGraphicsRootDescriptorTable(2, d3dGPUHandle);
-	d3dGPUHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	pd3dCommandList->SetGraphicsRootDescriptorTable(2, refDescHandle.gpuHandle);
+	refDescHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
 #else
 	m_InstanceDataSBuffer.SetBufferToPipeline(pd3dCommandList, 2);
@@ -88,14 +120,14 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 		for (int i = 0; i < instanceKey.pMaterials.size(); ++i) {
 			instanceKey.pMaterials[i]->UpdateShaderVariable(pd3dCommandList);
-			m_pd3dDevice->CopyDescriptorsSimple(1, d3dCPUHandle, 
+			m_pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
 				instanceKey.pMaterials[i]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			d3dCPUHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+			refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
 			instanceKey.pMaterials[i]->OnPrepareRender(pd3dCommandList);
 
-			pd3dCommandList->SetGraphicsRootDescriptorTable(1, d3dGPUHandle);
-			d3dGPUHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+			pd3dCommandList->SetGraphicsRootDescriptorTable(1, refDescHandle.gpuHandle);
+			refDescHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
 			instanceKey.pMesh->Render(pd3dCommandList, i, nInstanceCount);
 		}
@@ -105,9 +137,87 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 }
 
-void RenderManager::SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const
+void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
 {
-	pd3dCommandList->SetDescriptorHeaps(1, m_pd3dDescriptorHeap.GetAddressOf());
+	CD3DX12_DESCRIPTOR_RANGE d3dDescriptorRanges[6];
+	d3dDescriptorRanges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 0, 0, 0);	// c0, c1 : Camera, Lights
+	d3dDescriptorRanges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 0, 0, 0);	// t0 : Skybox
+	d3dDescriptorRanges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 1, 0, 0);	// t1, t2, t3 : 각각 Terrain, Detail Terrain, 물
+
+	d3dDescriptorRanges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 2, 0, 0);	// c2 : Material, StructuredBuffer 에서 World 행렬의 위치(Base)
+	d3dDescriptorRanges[4].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 7, 4, 0, 0);	// t4 ~ t10 : 각각 albedo, specular, normal, metallic, emission, detail albedo, detail normal
+
+	d3dDescriptorRanges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 11, 0, 0);	// t11 : World 행렬들을 전부 담을 StructuredBuffer
+
+	CD3DX12_ROOT_PARAMETER d3dRootParameters[4];
+	{
+		// Per Scene
+		d3dRootParameters[0].InitAsDescriptorTable(3, &d3dDescriptorRanges[0], D3D12_SHADER_VISIBILITY_ALL);
+		
+		// Material
+		d3dRootParameters[1].InitAsDescriptorTable(2, &d3dDescriptorRanges[3], D3D12_SHADER_VISIBILITY_ALL);
+		
+		// Instance data
+		d3dRootParameters[2].InitAsDescriptorTable(1, &d3dDescriptorRanges[5], D3D12_SHADER_VISIBILITY_ALL);
+
+		// 디버그용 OBB 그리기
+		d3dRootParameters[3].InitAsConstantBufferView(3, 0, D3D12_SHADER_VISIBILITY_ALL);
+	}
+
+	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
+		| D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS
+		| D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS;
+
+	D3D12_STATIC_SAMPLER_DESC d3dSamplerDescs[2];
+	d3dSamplerDescs[0].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	d3dSamplerDescs[0].AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	d3dSamplerDescs[0].AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	d3dSamplerDescs[0].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	d3dSamplerDescs[0].MipLODBias = 0;
+	d3dSamplerDescs[0].MaxAnisotropy = 1;
+	d3dSamplerDescs[0].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dSamplerDescs[0].MinLOD = 0;
+	d3dSamplerDescs[0].MaxLOD = D3D12_FLOAT32_MAX;
+	d3dSamplerDescs[0].ShaderRegister = 0;
+	d3dSamplerDescs[0].RegisterSpace = 0;
+	d3dSamplerDescs[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	d3dSamplerDescs[1].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	d3dSamplerDescs[1].AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	d3dSamplerDescs[1].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	d3dSamplerDescs[1].AddressW = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	d3dSamplerDescs[1].MipLODBias = 0;
+	d3dSamplerDescs[1].MaxAnisotropy = 1;
+	d3dSamplerDescs[1].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+	d3dSamplerDescs[1].MinLOD = 0;
+	d3dSamplerDescs[1].MaxLOD = D3D12_FLOAT32_MAX;
+	d3dSamplerDescs[1].ShaderRegister = 1;
+	d3dSamplerDescs[1].RegisterSpace = 0;
+	d3dSamplerDescs[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+
+	D3D12_ROOT_SIGNATURE_DESC d3dRootSignatureDesc{};
+	{
+		d3dRootSignatureDesc.NumParameters = _countof(d3dRootParameters);
+		d3dRootSignatureDesc.pParameters = d3dRootParameters;
+		d3dRootSignatureDesc.NumStaticSamplers = _countof(d3dSamplerDescs);
+		d3dRootSignatureDesc.pStaticSamplers = d3dSamplerDescs;
+		d3dRootSignatureDesc.Flags = d3dRootSignatureFlags;
+	}
+
+	ComPtr<ID3DBlob> pd3dSignatureBlob = nullptr;
+	ComPtr<ID3DBlob> pd3dErrorBlob = nullptr;
+
+	HRESULT hr = D3D12SerializeRootSignature(&d3dRootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, pd3dSignatureBlob.GetAddressOf(), pd3dErrorBlob.GetAddressOf());
+	if (FAILED(hr)) {
+		char* pErrorString = (char*)pd3dErrorBlob->GetBufferPointer();
+		HWND hWnd = ::GetActiveWindow();
+		MessageBoxA(hWnd, pErrorString, NULL, 0);
+		OutputDebugStringA(pErrorString);
+		__debugbreak();
+	}
+
+	pd3dDevice->CreateRootSignature(0, pd3dSignatureBlob->GetBufferPointer(), pd3dSignatureBlob->GetBufferSize(), IID_PPV_ARGS(g_pd3dRootSignature.GetAddressOf()));
 }
 
 void RenderManager::Clear()

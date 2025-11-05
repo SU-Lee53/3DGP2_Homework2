@@ -31,8 +31,11 @@ public:
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 public:
+	std::vector<std::shared_ptr<Scene>>	m_pScenes{};
+	static std::shared_ptr<Scene> g_pCurrentScene;
+
+public:
 	GameTimer				m_GameTimer{};
-	std::shared_ptr<Scene>	m_pScene = nullptr;
 
 	POINT					m_ptOldCursorPos;
 	TSTRING					m_tstrFrameRate;
@@ -62,6 +65,9 @@ private:
 	void ChangeSwapChainState();
 
 public:
+	static HINSTANCE g_hInstance;
+	static HWND g_hWnd;
+
 	static bool g_bMsaa4xEnable;
 	static UINT g_nMsaa4xQualityLevels;
 
@@ -73,8 +79,6 @@ public:
 	const static UINT g_nSwapChainBuffers = 2;
 
 private:
-	HINSTANCE m_hInstance;
-	HWND m_hWnd;
 
 	// DXGI
 	ComPtr<IDXGIFactory4>	m_pdxgiFactory;
@@ -117,3 +121,5 @@ private:
 #define RENDER GameFramework::g_pRenderManager
 #define UI GameFramework::g_pUIManager
 #define TEXTURE GameFramework::g_pTextureManager
+
+#define CUR_SCENE GameFramework::g_pCurrentScene

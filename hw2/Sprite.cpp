@@ -55,7 +55,7 @@ void TexturedSprite::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphi
 	pd3dCommandList->SetGraphicsRootDescriptorTable(1, descHandle.gpuHandle);
 	descHandle.gpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
 	
-	pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, m_pTexture->GetSRVHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, m_pTexture->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
 	pd3dCommandList->SetGraphicsRootDescriptorTable(2, descHandle.gpuHandle);
@@ -69,13 +69,27 @@ void Sprite::SetLayerIndex(UINT uiLayerIndex)
 	m_nLayerIndex = uiLayerIndex;
 }
 
+bool Sprite::IsCursorInSprite(float x, float y) const
+{
+	if (!m_bClickable) {
+		return false;
+	}
+
+	if (x >= m_Rect.fLeft && x <= m_Rect.fRight &&
+		y >= m_Rect.fTop && y <= m_Rect.fBottom) {
+		return true;
+	}
+
+	return false;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TextSprite
 
 TextSprite::TextSprite(const std::string& strText, float fLeft, float fTop, float fRight, float fBottom, XMFLOAT4 xmf4TextColor, UINT uiLayerIndex, bool bClickable)
 	: Sprite(fLeft, fTop, fRight, fBottom, uiLayerIndex, bClickable)
 {
-	assert(strText.length() < MAX_CHARACTER_PER_SPRITE);
+	assert(strText.length() <= MAX_CHARACTER_PER_SPRITE);
 	const char* cstrText = strText.c_str();
 	strcpy_s(m_cstrText, strText.length() + 1, cstrText);	// NULL 문자 포함
 	m_nTextLength = strText.length();
@@ -141,5 +155,5 @@ void TextSprite::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCo
 	pd3dCommandList->SetGraphicsRootDescriptorTable(1, descHandle.gpuHandle);
 	descHandle.gpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
 
-	pd3dCommandList->DrawInstanced(1, m_nTextLength, 0, 0);
+	pd3dCommandList->DrawInstanced(m_nTextLength, 1, 0, 0);
 }

@@ -71,7 +71,6 @@ public:
 	std::string m_strFrameName;
 
 	std::shared_ptr<Mesh> m_pMesh;
-	
 	std::vector<std::shared_ptr<Material>> m_pMaterials;
 
 	XMFLOAT4X4 m_xmf4x4Transform;
@@ -81,8 +80,7 @@ public:
 	std::vector<std::shared_ptr<GameObject>> m_pChildren;
 
 public:
-	static std::vector<MATERIALLOADINFO> LoadMaterialsInfoFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);
-	static std::shared_ptr<MESHLOADINFO> LoadMeshInfoFromFile(std::ifstream& inFile);
+	void LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);
 
 	static std::shared_ptr<GameObject> LoadFrameHierarchyFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, std::shared_ptr<GameObject> pParent, std::ifstream& inFile);
 	static std::shared_ptr<GameObject> LoadGeometryFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, const std::string& strFilePath);

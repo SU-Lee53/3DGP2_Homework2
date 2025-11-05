@@ -1,11 +1,11 @@
 #ifndef _COMMON_
 #define _COMMON_
 
-////////////
-// Camera //
-////////////
 
-cbuffer cbCameraInfo : register(b0)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Camera
+
+cbuffer cbCameraData : register(b0)
 {
     matrix gmtxView;
     matrix gmtxProjection;
@@ -13,9 +13,9 @@ cbuffer cbCameraInfo : register(b0)
 };
 
 
-///////////
-// Light //
-///////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Light
+
 #define MAX_LIGHTS			16 
 #define MAX_MATERIALS		512 
 
@@ -44,16 +44,20 @@ struct LIGHT
     float padding;
 };
 
-cbuffer cbLights : register(b1)
+cbuffer cbLightData : register(b1)
 {
     LIGHT gLights[MAX_LIGHTS];
     float4 gcGlobalAmbientLight;
     int gnLights;
 };
 
-////////////////
-// Per Object // 
-////////////////
+Texture2DArray gtxtarrSkybox : register(t0);
+Texture2D gtxtTerrain : register(t1);
+Texture2D gtxtDetailTerrain : register(t2);
+Texture2D gtxtTerrainWater : register(t3);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Per Object 
 
 struct MATERIAL
 {
@@ -63,26 +67,38 @@ struct MATERIAL
     float4 m_cEmissive;
 };
 
-cbuffer cbGameObjectInfo : register(b2)
+cbuffer cbGameObjectData : register(b2)
 {
     MATERIAL gMaterial;
+    int gnBaseIndex;
 };
 
-/////////////////////
-// Instancing Data // 
-/////////////////////
+Texture2D gtxtAlbedoMap     : register(t4);
+Texture2D gtxtSpecularMap     : register(t5);
+Texture2D gtxtNormalMap     : register(t6);
+Texture2D gtxtMetaillicMap     : register(t7);
+Texture2D gtxtEmissionMap     : register(t8);
+Texture2D gtxtDetailAlbedoMap     : register(t9);
+Texture2D gtxtDetailNormalMap     : register(t10);
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Instancing Data 
 
 //struct INSTANCE_DATA
 //{
 //    matrix mtxGameObject;
 //};
 
-StructuredBuffer<matrix> sbInstanceData : register(t0);
+StructuredBuffer<matrix> sbInstanceData : register(t11);
 
-cbuffer cbInstanceInfo : register(b3)
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug Data 
+
+cbuffer cbOBBDebugData : register(b3)
 {
-    int gnBaseIndex;
-}
-
+    float3 gvOBBCenter;
+    float3 gvOBBExtent;
+    float4 gvOBBOrientationQuat;
+};
 
 #endif

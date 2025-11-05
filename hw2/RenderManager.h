@@ -35,7 +35,6 @@ struct std::hash<INSTANCE_KEY> {
 	}
 };
 
-
 class RenderManager {
 public:
 	RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
@@ -50,6 +49,13 @@ public:
 	void SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const;
 
 private:
+	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, IN OUT DescriptorHandle& refDescHandle);
+
+
+	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
+
+
+private:
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceDatas;
 	UINT m_nInstanceIndex = 0;
@@ -60,4 +66,8 @@ private:
 	StructuredBuffer				m_InstanceDataSBuffer;
 
 	UINT m_nDrawCalls = 0;
+
+public:
+	static ComPtr<ID3D12RootSignature> g_pd3dRootSignature;
+
 };

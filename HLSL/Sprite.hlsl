@@ -2,7 +2,7 @@
 struct VS_SPRITE_OUTPUT
 {
     float4 pos : SV_POSITION;
-    uint nInstanceID : INSTANCEID;
+    uint nVertexID : INSTANCEID;
 };
 
 struct GS_SPRITE_OUTPUT
@@ -27,12 +27,12 @@ SamplerState gSamplerState : register(s0);
 // Texture Sprite
 // 화면에 이미지를 그림
 
-VS_SPRITE_OUTPUT VSTextureSprite(uint nInstanceID : SV_InstanceID)
+VS_SPRITE_OUTPUT VSTextureSprite(uint nVertexID : SV_VertexID)
 {
     VS_SPRITE_OUTPUT output;
     
     output.pos = float4(0, 0, 0, 1);
-    output.nInstanceID = nInstanceID;
+    output.nVertexID = nVertexID;
     
     return output;
 }
@@ -73,21 +73,21 @@ float4 PSTextureSprite(GS_SPRITE_OUTPUT input) : SV_Target
 // Text Sprite
 // 화면에 글자를 그림
 
-#define MAX_CHARACTER_PER_SPRITE 10
+//#define MAX_CHARACTER_PER_SPRITE 10
 
 cbuffer TEXT_DATA : register(b1)
 {
-    uint4 gCharacters[5];
+    uint4 gCharacters[10];
     float4 gcTextColor;
     uint gnLength;
 }
 
-VS_SPRITE_OUTPUT VSTextSprite(uint nInstanceID : SV_InstanceID)
+VS_SPRITE_OUTPUT VSTextSprite(uint nVertexID : SV_VertexID)
 {
     VS_SPRITE_OUTPUT output;
     
     output.pos = float4(0, 0, 0, 1);
-    output.nInstanceID = nInstanceID; // text 길이만큼 인스턴싱으로 그림 -> gCharacter[nInstanceID - 1] 가 현재 그리려는 글자임
+    output.nVertexID = nVertexID; // text 길이만큼 인스턴싱으로 그림 -> gCharacter[nInstanceID - 1] 가 현재 그리려는 글자임
     
     return output;
 }
@@ -103,7 +103,7 @@ void GSTextSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
     float nFontRectWidth = abs(fRectRight - fRectLeft) / gnLength;
     float nFontRectHeight = abs(fRectBottom - fRectTop);
     
-    float fLeft = fRectLeft + (nFontRectWidth * input[0].nInstanceID);
+    float fLeft = fRectLeft + (nFontRectWidth * input[0].nVertexID);
     float fTop = fRectTop;
     float fRight = fLeft + nFontRectWidth;
     float fBottom = fRectBottom;
@@ -116,7 +116,7 @@ void GSTextSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
     float fontStrideU = 1.0f / 26.f;
     float fontStrideV = 1.0f / 3.f;
     
-    uint nCharacter = gCharacters[(input[0].nInstanceID) / 4][(input[0].nInstanceID) % 4];
+    uint nCharacter = gCharacters[(input[0].nVertexID) / 4][(input[0].nVertexID) % 4];
     if (nCharacter >= 65 && nCharacter <= 90) {
         // 대문자
         uint nCharacterStride = nCharacter - 65;

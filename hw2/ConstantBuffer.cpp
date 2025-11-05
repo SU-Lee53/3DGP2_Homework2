@@ -8,7 +8,9 @@ ConstantBuffer::ConstantBuffer(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 
 ConstantBuffer::~ConstantBuffer()
 {
-	m_pd3dCBuffer->Unmap(0, NULL);
+	if (m_pd3dCBuffer) {
+		m_pd3dCBuffer->Unmap(0, NULL);
+	}
 }
 void ConstantBuffer::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiElementSize, bool bCreateView)
 {

@@ -1,6 +1,6 @@
 #pragma once
 
-struct CB_LIGHT_DATA {
+struct LightData {
     XMFLOAT4 xmf4Ambient;                // c0
     XMFLOAT4 xmf4Diffuse;                // c1
     XMFLOAT4 xmf4Specular;               // c2
@@ -24,7 +24,7 @@ enum LIGHT_TYPE : int {
 
 class Light {
 public:
-    virtual CB_LIGHT_DATA MakeLightData() { return CB_LIGHT_DATA{}; }
+    virtual LightData MakeLightData() { return LightData{}; }
 
 public:
     bool m_bEnable;
@@ -32,7 +32,7 @@ public:
 
 class PointLight : public Light {
 public:
-    virtual CB_LIGHT_DATA MakeLightData() override;
+    virtual LightData MakeLightData() override;
 
     XMFLOAT4    m_xmf4Diffuse;
     XMFLOAT4    m_xmf4Ambient;
@@ -50,7 +50,7 @@ public:
 
 class SpotLight : public Light {
 public:
-    virtual CB_LIGHT_DATA MakeLightData() override;
+    virtual LightData MakeLightData() override;
 
     XMFLOAT4    m_xmf4Diffuse;
     XMFLOAT4    m_xmf4Ambient;
@@ -70,7 +70,7 @@ public:
 
 class DirectionalLight : public Light {
 public:
-    virtual CB_LIGHT_DATA MakeLightData() override;
+    virtual LightData MakeLightData() override;
 
     XMFLOAT4    m_xmf4Diffuse;
     XMFLOAT4    m_xmf4Ambient;

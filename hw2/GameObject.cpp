@@ -190,33 +190,33 @@ void GameObject::ReleaseUploadBuffers()
 	}
 }
 
-/////////////////////
-// Load From Files //
-/////////////////////
-
-std::string ReadStringFromFile(std::ifstream& inFile)
-{
-	BYTE nStrLength = 0;
-	UINT nReads = 0;
-	inFile.read((char*)&nStrLength, sizeof(BYTE));
-
-	std::unique_ptr<char[]> pcstrRead;
-	pcstrRead = std::make_unique<char[]>(nStrLength);
-	inFile.read(pcstrRead.get(), nStrLength);
-
-	return std::string(pcstrRead.get(), nStrLength);	// [pcstrRead, pcstrRead + nStrLength)
-}
-
-std::vector<MATERIALLOADINFO> GameObject::LoadMaterialsInfoFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile)
+void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile)
 {
 	std::string strRead;
-	
+
 	int nMaterials;
 	int materialIndex;
 	inFile.read((char*)(&nMaterials), sizeof(int));
-	
-	std::vector<MATERIALLOADINFO> materials;
-	materials.resize(nMaterials);
+	m_pMaterials.resize(nMaterials);
+
+	std::shared_ptr<Material> pMaterial;
+
+	auto setTextureFunction = [&](UINT nTextureIndex) {
+		strRead = ::ReadStringFromFile(inFile);
+		if (strRead == "null") {
+			return;
+		}
+
+		size_t duplicatedPos = strRead.find('@');
+		if (duplicatedPos != std::string::npos) {	// Áßº¹ÀÓ
+			strRead.erase(duplicatedPos);
+			pMaterial->SetTexture(nTextureIndex, TEXTURE->GetTexture(strRead));
+		}
+		else {
+			std::wstring strTextureFilename = std::wstring(strRead.begin(), strRead.end()) + L".dds";
+			pMaterial->SetTexture(nTextureIndex, TEXTURE->LoadTexture(pd3dCommandList, strRead, strTextureFilename, RESOURCE_TYPE_TEXTURE2D));
+		}
+	};
 
 	while (true) {
 		strRead = ::ReadStringFromFile(inFile);
@@ -224,164 +224,88 @@ std::vector<MATERIALLOADINFO> GameObject::LoadMaterialsInfoFromFile(ComPtr<ID3D1
 		if (strRead == "<Material>:")
 		{
 			inFile.read((char*)(&materialIndex), sizeof(int));
+			pMaterial = std::make_shared<Material>(pd3dDevice, pd3dCommandList);
+			SetMaterial(materialIndex, pMaterial);
 		}
 		else if (strRead == "<AlbedoColor>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].xmf4AlbedoColor), sizeof(XMFLOAT4));
+			inFile.read((char*)(&pMaterial->m_xmf4AlbedoColor), sizeof(XMFLOAT4));
 		}
 		else if (strRead == "<EmissiveColor>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].xmf4EmissiveColor), sizeof(XMFLOAT4));
+			inFile.read((char*)(&pMaterial->m_xmf4EmissiveColor), sizeof(XMFLOAT4));
 		}
 		else if (strRead == "<SpecularColor>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].xmf4SpecularColor), sizeof(XMFLOAT4));
+			inFile.read((char*)(&pMaterial->m_xmf4SpecularColor), sizeof(XMFLOAT4));
 		}
 		else if (strRead == "<Glossiness>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].fGlossiness), sizeof(float));
+			inFile.read((char*)(&pMaterial->m_fGlossiness), sizeof(float));
 		}
 		else if (strRead == "<Smoothness>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].fSmoothness), sizeof(float));
+			inFile.read((char*)(&pMaterial->m_fSmoothness), sizeof(float));
 		}
 		else if (strRead == "<Metallic>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].fMetallic), sizeof(float));
+			inFile.read((char*)(&pMaterial->m_fMetallic), sizeof(float));
 		}
 		else if (strRead == "<SpecularHighlight>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].fSpecularHighlight), sizeof(float));
+			inFile.read((char*)(&pMaterial->m_fSpecularHighlight), sizeof(float));
 		}
 		else if (strRead == "<GlossyReflection>:")
 		{
-			inFile.read((char*)(&materials[materialIndex].fGlossyReflection), sizeof(float));
+			inFile.read((char*)(&pMaterial->m_fGlossyReflection), sizeof(float));
 		}
 		else if (strRead == "<AlbedoMap>:")
 		{
-
+			setTextureFunction(0);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
 		}
 		else if (strRead == "<SpecularMap>:")
 		{
-
+			setTextureFunction(1);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_SPECULAR_MAP);
 		}
 		else if (strRead == "<NormalMap>:")
 		{
-
+			setTextureFunction(2);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_NORMAL_MAP);
 		}
 		else if (strRead == "<MetallicMap>:")
 		{
-
+			setTextureFunction(3);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_METALLIC_MAP);
 		}
 		else if (strRead == "<EmissionMap>:")
 		{
-
+			setTextureFunction(4);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_EMISSION_MAP);
 		}
 		else if (strRead == "<DetailAlbedoMap>:")
 		{
-
+			setTextureFunction(5);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_ALBEDO_MAP);
 		}
 		else if (strRead == "<DetailNormalMap>:")
 		{
-
+			setTextureFunction(6);
+			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_NORMAL_MAP);
 		}
 		else if (strRead == "</Materials>")
 		{
 			break;
 		}
 	}
-
-	return materials;
-}
-
-std::shared_ptr<MESHLOADINFO> GameObject::LoadMeshInfoFromFile(std::ifstream& inFile)
-{
-	std::string strRead;
-
-	std::shared_ptr<MESHLOADINFO> pMeshInfo = std::make_shared<MESHLOADINFO>();
-
-	int nVertices;
-	inFile.read((char*)(&nVertices), sizeof(int));
-	pMeshInfo->strMeshName = ::ReadStringFromFile(inFile);
-
-	while (true) {
-		strRead = ::ReadStringFromFile(inFile);
-		if (strRead == "<Bounds>:") {
-			inFile.read((char*)&pMeshInfo->xmf3AABBCenter, sizeof(XMFLOAT3));
-			inFile.read((char*)&pMeshInfo->xmf3AABBExtents, sizeof(XMFLOAT3));
-		}
-		else if (strRead == "<Positions>:") {
-			int nPositions;
-			inFile.read((char*)&nPositions, sizeof(int));
-			if (nPositions > 0) {
-				pMeshInfo->nType |= VERTEX_TYPE_POSITION;
-				pMeshInfo->xmf3Positions.resize(nPositions);
-				inFile.read((char*)pMeshInfo->xmf3Positions.data(), sizeof(XMFLOAT3) * nPositions);
-			}
-		}
-		else if (strRead == "<Colors>:") {
-			int nColors;
-			inFile.read((char*)&nColors, sizeof(int));
-			if (nColors > 0) {
-				pMeshInfo->nType |= VERTEX_TYPE_COLOR;
-				pMeshInfo->xmf4Colors.resize(nColors);
-				inFile.read((char*)pMeshInfo->xmf4Colors.data(), sizeof(XMFLOAT4) * nColors);
-			}
-		}
-		else if (strRead == "<Normals>:") {
-			int nNormals;
-			inFile.read((char*)&nNormals, sizeof(int));
-			if (nNormals > 0) {
-				pMeshInfo->nType |= VERTEX_TYPE_NORMAL;
-				pMeshInfo->xmf3Normals.resize(nNormals);
-				inFile.read((char*)pMeshInfo->xmf3Normals.data(), sizeof(XMFLOAT3) * nNormals);
-			}
-		}
-		else if (strRead == "<Indices>:") {
-			int Indices;
-			inFile.read((char*)&Indices, sizeof(int));
-			if (Indices > 0)
-			{
-				pMeshInfo->Indices.resize(Indices);
-				inFile.read((char*)pMeshInfo->Indices.data(), sizeof(UINT) * Indices);
-			}
-		}
-		else if (strRead == "<SubMeshes>:") {
-			int SubMeshes;
-			inFile.read((char*)&SubMeshes, sizeof(int));
-			if (SubMeshes > 0) {
-				pMeshInfo->SubMeshes.resize(SubMeshes);
-				for (int i = 0; i < pMeshInfo->SubMeshes.size(); ++i) {
-					strRead = ::ReadStringFromFile(inFile);
-					if (strRead == "<SubMesh>:") {
-						int nIndex;
-						int nSubSetIndices;
-						inFile.read((char*)&nIndex, sizeof(int));
-						inFile.read((char*)&nSubSetIndices, sizeof(int));
-						if (nSubSetIndices > 0) {
-							pMeshInfo->SubMeshes[i].resize(nSubSetIndices);
-							inFile.read((char*)pMeshInfo->SubMeshes[i].data(), sizeof(UINT) * nSubSetIndices);
-						}
-					}
-				}
-			}
-		}
-		else if ((strRead == "</Mesh>"))
-		{
-			break;
-		}
-
-
-	}
-
-	return pMeshInfo;
 }
 
 std::shared_ptr<GameObject> GameObject::LoadFrameHierarchyFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, std::shared_ptr<GameObject> pParent, std::ifstream& inFile)
 {
 	std::string strRead;
 
-	int nFrames = 0;
+	int nFrames = 0, nTextures = 0;
 	std::shared_ptr<GameObject> pGameObject;
 
 	while (true) {
@@ -391,6 +315,7 @@ std::shared_ptr<GameObject> GameObject::LoadFrameHierarchyFromFile(ComPtr<ID3D12
 			pGameObject = std::make_shared<GameObject>();
 
 			inFile.read((char*)&nFrames, sizeof(int));
+			inFile.read((char*)&nTextures, sizeof(int));
 			pGameObject->m_strFrameName = ::ReadStringFromFile(inFile);
 
 			if (pParent) {
@@ -409,37 +334,12 @@ std::shared_ptr<GameObject> GameObject::LoadFrameHierarchyFromFile(ComPtr<ID3D12
 			inFile.read((char*)&pGameObject->m_xmf4x4Transform, sizeof(XMFLOAT4X4));
 		}
 		else if (strRead == "<Mesh>:") {
-			std::shared_ptr<MESHLOADINFO> pMeshLoadInfo = GameObject::LoadMeshInfoFromFile(inFile);
-			if (pMeshLoadInfo) {
-				std::shared_ptr<Mesh> pMesh;
-				if (pMeshLoadInfo->nType & VERTEX_TYPE_NORMAL) {
-					pMesh = std::make_shared<IlluminatedMesh>(pd3dDevice, pd3dCommandList, *pMeshLoadInfo);
-				}
-				if (pMesh) {
-					pGameObject->m_pMesh = pMesh;
-				}
-			}
+			std::shared_ptr<StandardMesh> pMesh = std::make_shared<StandardMesh>();
+			pMesh->LoadMeshFromFile(pd3dDevice, pd3dCommandList, inFile);
+			pGameObject->SetMesh(pMesh);
 		}
 		else if (strRead == "<Materials>:") {
-			std::vector<MATERIALLOADINFO> materialInfos = GameObject::LoadMaterialsInfoFromFile(pd3dDevice, pd3dCommandList, inFile);
-			
-			if (materialInfos.size() != 0) {
-				pGameObject->m_pMaterials.reserve(materialInfos.size());
-
-				for (int i = 0; i < materialInfos.size(); ++i) {
-					std::shared_ptr<Material> pMaterial = std::make_shared<Material>(pd3dDevice, pd3dCommandList);
-
-					std::shared_ptr<MaterialColors> pMaterialColors = std::make_shared<MaterialColors>(materialInfos[i]);
-					pMaterial->SetMaterialColors(pMaterialColors);
-					
-					if (pGameObject->m_pMesh->GetType() & VERTEX_TYPE_NORMAL) {
-						pMaterial->SetIlluminatedShader();
-					}
-
-					pGameObject->m_pMaterials.push_back(pMaterial);
-				}
-			}
-			
+			pGameObject->LoadMaterialsFromFile(pd3dDevice, pd3dCommandList, inFile);
 		}
 		else if (strRead == "<Children>:") {
 			int nChildren;
@@ -478,19 +378,8 @@ std::shared_ptr<GameObject> GameObject::LoadGeometryFromFile(ComPtr<ID3D12Device
 		__debugbreak();
 	}
 
-	std::shared_ptr<GameObject> pGameObject;
+	std::shared_ptr<GameObject> pGameObject = GameObject::LoadFrameHierarchyFromFile(pd3dDevice, pd3dCommandList, pd3dRootSignature, nullptr, inFile);
 	
-	std::string strRead;
-	while (true) {
-		strRead = ::ReadStringFromFile(inFile);
-
-		if (strRead == "<Hierarchy>:") {
-			pGameObject = GameObject::LoadFrameHierarchyFromFile(pd3dDevice, pd3dCommandList, pd3dRootSignature, nullptr, inFile);
-		}
-		else if (strRead == "</Hierarchy>") {
-			break;
-		}
-	}
 
 	if (pGameObject) {
 		return RESOURCE->AddGameObject(strFileName, pGameObject);

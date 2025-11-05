@@ -1,19 +1,6 @@
 #include "stdafx.h"
 #include "Material.h"
-
-////////////////////
-// MaterialColors //
-////////////////////
-
-MaterialColors::MaterialColors(const MATERIALLOADINFO& pMaterialInfo)
-{
-	xmf4Diffuse = pMaterialInfo.xmf4AlbedoColor;
-	xmf4Specular = pMaterialInfo.xmf4SpecularColor; //(r,g,b,a=power)
-	xmf4Specular.w = (pMaterialInfo.fGlossiness * 255.0f);
-	xmf4Emissive = pMaterialInfo.xmf4EmissiveColor;
-
-	
-}
+#include "Texture.h"
 
 //////////////
 // Material //
@@ -34,10 +21,10 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 {
 	CB_MATERIAL_DATA cbData{};
 	{
-		cbData.xmf4Ambient = m_pMaterialColors->xmf4Ambient;
-		cbData.xmf4Diffuse = m_pMaterialColors->xmf4Diffuse;
-		cbData.xmf4Specular = m_pMaterialColors->xmf4Specular;
-		cbData.xmf4Emissive = m_pMaterialColors->xmf4Emissive;
+		cbData.xmf4Ambient = m_xmf4AmbientColor;
+		cbData.xmf4Diffuse = m_xmf4AlbedoColor;
+		cbData.xmf4Specular = m_xmf4SpecularColor;
+		cbData.xmf4Emissive = m_xmf4EmissiveColor;
 	}
 	m_MaterialCBuffer.UpdateData(&cbData);
 }
@@ -45,6 +32,16 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 void Material::SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex)
 {
 	m_MaterialCBuffer.SetBufferToPipeline(pd3dCommandList, uiRootParameterIndex);
+}
+
+void Material::OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
+{
+	m_pShader->OnPrepareRender(pd3dCommandList);
+}
+
+void Material::SetTexture(UINT nTextureIndex, std::shared_ptr<Texture> pTexture)
+{
+	m_pTextures[nTextureIndex] = pTexture;
 }
 
 void Material::PrepareShaders(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)

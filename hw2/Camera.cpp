@@ -55,7 +55,7 @@ Camera::Camera(const std::shared_ptr<Camera> pOther)
 
 void Camera::CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
-	m_CameraCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_SCENE_DATA>::value, true);
+	m_CameraCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_LIGHT_DATA>::value, true);
 }
 
 void Camera::UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)

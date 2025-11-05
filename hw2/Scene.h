@@ -5,15 +5,15 @@
 
 #define MAX_LIGHTS 16
 
-struct CB_SCENE_DATA {
-	CB_LIGHT_DATA	LightData[MAX_LIGHTS];
+struct CB_LIGHT_DATA {
+	LightData	LightData[MAX_LIGHTS];
 	XMFLOAT4		globalAmbientLight;
 	int				nLights;
 };
 
 class Scene {
 public:
-	Scene(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	Scene();
 
 public:
 	virtual void BuildDefaultLightsAndMaterials();
@@ -27,19 +27,24 @@ public:
 	virtual void CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
-private:
-	void CreateRootSignature(ComPtr<ID3D12Device> pd3dDevice);
+protected:
+	virtual void CreateRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 
 public:
-	bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
-	bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual bool OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+	virtual bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
+
+	const ConstantBuffer& GetLightCBuffer() const { return m_LightCBuffer; }
+
+public:
+	std::shared_ptr<Sprite> CheckButtonClicked();
 
 public:
 	std::shared_ptr<Camera> GetCamera() const;
 	const ConstantBuffer& GetCBuffer() const { return m_LightCBuffer; }
 	std::shared_ptr<Player> GetPlayer() const;
 
-private:
+protected:
 	std::shared_ptr<Player>						m_pPlayer;
 	std::vector<std::shared_ptr<GameObject>>	m_pGameObjects;
 	std::vector<std::shared_ptr<Light>>			m_pLights;
@@ -49,7 +54,7 @@ private:
 
 	ConstantBuffer								m_LightCBuffer;
 
-private:
+protected:
 	ComPtr<ID3D12RootSignature> m_pd3dRootSignature;
 
 public:

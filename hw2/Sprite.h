@@ -1,6 +1,6 @@
 #pragma once
 
-#define MAX_CHARACTER_PER_SPRITE 20
+#define MAX_CHARACTER_PER_SPRITE 40
 
 enum SPRITE_TYPE : UINT8 {
 	SPRITE_TYPE_TEXTURE = 0,
@@ -33,6 +33,9 @@ public:
 	virtual void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& descHandle) const = 0;
 
 	void SetLayerIndex(UINT uiLayerIndex);
+	UINT GetLayerIndex() const { return m_nLayerIndex; };
+
+	bool IsCursorInSprite(float x, float y) const;
 
 protected:
 	ConstantBuffer m_SpriteCBuffer;

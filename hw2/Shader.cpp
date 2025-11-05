@@ -184,7 +184,7 @@ void IlluminatedShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Roo
 {
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
-		d3dPipelineDesc.pRootSignature = pd3dRootSignature.Get();
+		d3dPipelineDesc.pRootSignature = pd3dRootSignature ? pd3dRootSignature.Get() : RenderManager::g_pd3dRootSignature.Get();
 		d3dPipelineDesc.VS = CreateVertexShader();
 		d3dPipelineDesc.PS = CreatePixelShader();
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
