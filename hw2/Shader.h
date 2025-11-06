@@ -32,7 +32,7 @@ public:
 
 };
 
-class IlluminatedShader : public Shader {
+class StandardShader : public Shader {
 public:
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;
 

@@ -142,17 +142,21 @@ void TerrainObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 	XMStoreFloat4(&m_xmf4MapBoundaryPlanes[2], XMPlaneFromPointNormal(XMVectorSet(0.f, 0.f, 0.f, 1.f), XMVectorSet(0.f, 0.f, 1.f, 0.f)));
 	XMStoreFloat4(&m_xmf4MapBoundaryPlanes[3], XMPlaneFromPointNormal(XMVectorSet(0.f, 0.f, (GetLength() * 0.5f), 1.f), XMVectorSet(0.f, 0.f, -1.f, 0.f)));
 
-	TEXTURE->LoadTexture(pd3dCommandList, "TerrainBase", L"Terrain/Base_Texture.dds", RESOURCE_TYPE_TEXTURE2D);
-	TEXTURE->LoadTexture(pd3dCommandList, "TerrainDetailed", L"Terrain/Detail_Texture_7.dds", RESOURCE_TYPE_TEXTURE2D);
-	TEXTURE->LoadTexture(pd3dCommandList, "TerrainWater", L"Terrain/Water_Base_Texture_0.dds", RESOURCE_TYPE_TEXTURE2D);
-
-	// 11.05
-	// TODO : 여기부터
+	std::shared_ptr<Texture> pBaseTexture = TEXTURE->LoadTexture(pd3dCommandList, "TerrainBase", L"Terrain/Base_Texture.dds", RESOURCE_TYPE_TEXTURE2D);
+	std::shared_ptr<Texture> pDetailedTexture = TEXTURE->LoadTexture(pd3dCommandList, "TerrainDetailed", L"Terrain/Detail_Texture_7.dds", RESOURCE_TYPE_TEXTURE2D);
 
 	//m_xmOBB.Extents = XMFLOAT3{ (GetLength() * 0.5f), 500.f, (GetLength() * 0.5f) };
 	//XMStoreFloat4(&m_xmOBB.Orientation, XMQuaternionRotationRollPitchYaw(0.f, 0.f, 0.f));
 	//m_xmOBB.Center = XMFLOAT3{ GetWidth() * 0.5f, GetHeight(GetWidth() * 0.5, GetLength() * 0.5f), GetLength() * 0.5f };
+	
+	std::shared_ptr<Material> pTerrainMaterial = std::make_shared<Material>(pd3dDevice, pd3dCommandList);
+	pTerrainMaterial->SetTexture(TEXTURE_INDEX_ALBEDO_MAP, pBaseTexture);
+	pTerrainMaterial->SetTexture(TEXTURE_INDEX_DETAIL_ALBEDO_MAP, pDetailedTexture);
 
+	// 11.06
+	// TODO : 여기부터
+	// 자식 오브젝트 하나 생성
+	// 물 그릴 Grid Mesh 하나와 물 텍스쳐를 준비
 
 
 

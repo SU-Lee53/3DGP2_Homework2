@@ -75,6 +75,11 @@ D3D12_SHADER_BYTECODE Shader::CreateVertexShader()
 	return D3D12_SHADER_BYTECODE();
 }
 
+D3D12_SHADER_BYTECODE Shader::CreateGeometryShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
 D3D12_SHADER_BYTECODE Shader::CreatePixelShader()
 {
 	return D3D12_SHADER_BYTECODE();
@@ -177,9 +182,9 @@ D3D12_SHADER_BYTECODE Shader::CompileShader(const std::wstring& wstrFileName, co
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// IlluminatedShader
+// StandardShader
 
-void IlluminatedShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
+void StandardShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
 {
 	m_pd3dPipelineStates.resize(1);
 
@@ -207,7 +212,7 @@ void IlluminatedShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Roo
 	}
 }
 
-D3D12_INPUT_LAYOUT_DESC IlluminatedShader::CreateInputLayout()
+D3D12_INPUT_LAYOUT_DESC StandardShader::CreateInputLayout()
 {
 
 	/*
@@ -235,14 +240,14 @@ D3D12_INPUT_LAYOUT_DESC IlluminatedShader::CreateInputLayout()
 	return inputLayoutDesc;
 }
 
-D3D12_SHADER_BYTECODE IlluminatedShader::CreateVertexShader()
+D3D12_SHADER_BYTECODE StandardShader::CreateVertexShader()
 {
-	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSMain", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSStandard", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
 }
 
-D3D12_SHADER_BYTECODE IlluminatedShader::CreatePixelShader()
+D3D12_SHADER_BYTECODE StandardShader::CreatePixelShader()
 {
-	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSMain", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSStandard", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -308,10 +313,10 @@ D3D12_INPUT_LAYOUT_DESC TerrainShader::CreateInputLayout()
 
 D3D12_SHADER_BYTECODE TerrainShader::CreateVertexShader()
 {
-	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSMain", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSTerrain", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
 }
 
 D3D12_SHADER_BYTECODE TerrainShader::CreatePixelShader()
 {
-	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSMain", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSTerrain", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }

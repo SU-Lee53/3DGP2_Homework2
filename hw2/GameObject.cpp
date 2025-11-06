@@ -261,37 +261,37 @@ void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<I
 		}
 		else if (strRead == "<AlbedoMap>:")
 		{
-			setTextureFunction(0);
+			setTextureFunction(TEXTURE_INDEX_ALBEDO_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
 		}
 		else if (strRead == "<SpecularMap>:")
 		{
-			setTextureFunction(1);
+			setTextureFunction(TEXTURE_INDEX_SPECULAR_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_SPECULAR_MAP);
 		}
 		else if (strRead == "<NormalMap>:")
 		{
-			setTextureFunction(2);
+			setTextureFunction(TEXTURE_INDEX_NORMAL_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_NORMAL_MAP);
 		}
 		else if (strRead == "<MetallicMap>:")
 		{
-			setTextureFunction(3);
+			setTextureFunction(TEXTURE_INDEX_METALLIC_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_METALLIC_MAP);
 		}
 		else if (strRead == "<EmissionMap>:")
 		{
-			setTextureFunction(4);
+			setTextureFunction(TEXTURE_INDEX_EMISSION_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_EMISSION_MAP);
 		}
 		else if (strRead == "<DetailAlbedoMap>:")
 		{
-			setTextureFunction(5);
+			setTextureFunction(TEXTURE_INDEX_DETAIL_ALBEDO_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_ALBEDO_MAP);
 		}
 		else if (strRead == "<DetailNormalMap>:")
 		{
-			setTextureFunction(6);
+			setTextureFunction(TEXTURE_INDEX_DETAIL_NORMAL_MAP);
 			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_NORMAL_MAP);
 		}
 		else if (strRead == "</Materials>")

@@ -62,7 +62,6 @@ private:
 
 	std::array<std::shared_ptr<Texture>, 3>		m_pTerrainTextures;
 
-
 	int m_nWidth = 0;
 	int m_nLength = 0;
 	XMFLOAT3 m_xmf3Scale;

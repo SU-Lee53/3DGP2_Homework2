@@ -3,6 +3,17 @@
 
 class Texture;
 
+enum TEXTURE_INDEX {
+	TEXTURE_INDEX_ALBEDO_MAP = 0,
+	TEXTURE_INDEX_SPECULAR_MAP = 1,
+	TEXTURE_INDEX_NORMAL_MAP = 2,
+	TEXTURE_INDEX_METALLIC_MAP = 3,
+	TEXTURE_INDEX_EMISSION_MAP = 4,
+	TEXTURE_INDEX_DETAIL_ALBEDO_MAP = 5,
+	TEXTURE_INDEX_DETAIL_NORMAL_MAP = 6,
+
+};
+
 enum MATERIAL_TYPE {
 	MATERIAL_TYPE_ALBEDO_MAP = 0x01,
 	MATERIAL_TYPE_SPECULAR_MAP = 0x02,
@@ -33,6 +44,7 @@ public:
 	void SetIlluminatedShader() { SetShader(m_pIlluminatedShader); }
 
 	void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	void CopyTextureDescriptors(ComPtr<ID3D12Device> pd3dCommandList, DescriptorHandle& descHandle);
 	void SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex);
 
 	void OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
@@ -70,5 +82,6 @@ private:
 public:
 	static void PrepareShaders(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature);
 
+	const static UINT g_nTexturesPerMaterial = 7;
 };
 

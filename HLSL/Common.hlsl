@@ -51,10 +51,15 @@ cbuffer cbLightData : register(b1)
     int gnLights;
 };
 
+cbuffer cbTerrainData : register(b2)
+{
+    matrix gmtxTerrainWorld;
+};
+
 Texture2DArray gtxtarrSkybox : register(t0);
-Texture2D gtxtTerrain : register(t1);
-Texture2D gtxtDetailTerrain : register(t2);
-Texture2D gtxtTerrainWater : register(t3);
+
+SamplerState gssWrap : register(s0);
+SamplerState gssClamp : register(s1);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Per Object 
@@ -68,29 +73,29 @@ struct MATERIAL
     uint m_textureMask;
 };
 
-cbuffer cbGameObjectData : register(b2)
+cbuffer cbGameObjectData : register(b3)
 {
     MATERIAL gMaterial;
     int gnBaseIndex;
 };
 
-Texture2D gtxtAlbedoMap     : register(t4);
-Texture2D gtxtSpecularMap     : register(t5);
-Texture2D gtxtNormalMap     : register(t6);
-Texture2D gtxtMetaillicMap     : register(t7);
-Texture2D gtxtEmissionMap     : register(t8);
-Texture2D gtxtDetailAlbedoMap     : register(t9);
-Texture2D gtxtDetailNormalMap     : register(t10);
+Texture2D gtxtAlbedoMap         : register(t2);
+Texture2D gtxtSpecularMap       : register(t3);
+Texture2D gtxtNormalMap         : register(t4);
+Texture2D gtxtMetaillicMap      : register(t5);
+Texture2D gtxtEmissionMap       : register(t6);
+Texture2D gtxtDetailAlbedoMap   : register(t7);
+Texture2D gtxtDetailNormalMap   : register(t8);
 
-#define MATERIAL_TYPE_ALBEDO_MAP = 0x01,
-#define MATERIAL_TYPE_SPECULAR_MAP = 0x02,
-#define MATERIAL_TYPE_NORMAL_MAP = 0x04,
-#define MATERIAL_TYPE_METALLIC_MAP = 0x08,
-#define MATERIAL_TYPE_EMISSION_MAP = 0x10,
-#define MATERIAL_TYPE_DETAIL_ALBEDO_MAP = 0x20,
-#define MATERIAL_TYPE_DETAIL_NORMAL_MAP = 0x40
+#define MATERIAL_TYPE_ALBEDO_MAP           0x01
+#define MATERIAL_TYPE_SPECULAR_MAP         0x02
+#define MATERIAL_TYPE_NORMAL_MAP           0x04
+#define MATERIAL_TYPE_METALLIC_MAP         0x08
+#define MATERIAL_TYPE_EMISSION_MAP         0x10
+#define MATERIAL_TYPE_DETAIL_ALBEDO_MAP    0x20
+#define MATERIAL_TYPE_DETAIL_NORMAL_MAP    0x40
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Instancing Data 
 
 //struct INSTANCE_DATA
@@ -103,7 +108,7 @@ StructuredBuffer<matrix> sbInstanceData : register(t11);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug Data 
 
-cbuffer cbOBBDebugData : register(b3)
+cbuffer cbOBBDebugData : register(b4)
 {
     float3 gvOBBCenter;
     float3 gvOBBExtent;

@@ -17,6 +17,7 @@ void Material::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsComm
 {
 	m_MaterialCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_MATERIAL_DATA>::value, true);
 }
+
 void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	CB_MATERIAL_DATA cbData{};
@@ -28,6 +29,16 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 		cbData.nMaterialType = m_nType;
 	}
 	m_MaterialCBuffer.UpdateData(&cbData);
+}
+
+void Material::CopyTextureDescriptors(ComPtr<ID3D12Device> pd3dDevice, DescriptorHandle& descHandle)
+{
+	for (int i = 0; i < m_pTextures.size(); ++i) {
+		if (m_pTextures[i]) {
+			pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, m_pTextures[i]->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		}
+		descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	}
 }
 
 void Material::SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex)
@@ -47,6 +58,6 @@ void Material::SetTexture(UINT nTextureIndex, std::shared_ptr<Texture> pTexture)
 
 void Material::PrepareShaders(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
 {
-	m_pIlluminatedShader = std::make_shared<IlluminatedShader>();
+	m_pIlluminatedShader = std::make_shared<StandardShader>();
 	m_pIlluminatedShader->Create(pd3dDevice, pd3dRootSignature);
 }
