@@ -158,6 +158,12 @@ void GameScene::Update(float fTimeElapsed)
 		pSpotLight->m_xmf3Position = m_pPlayer->GetPosition();
 		pSpotLight->m_xmf3Direction = m_pPlayer->GetLookVector();
 	}
+	
+	m_pPlayer->AdjustHeightFromTerrain(m_pTerrain);
+
+	for (auto pObj : m_pGameObjects) {
+		pObj->AdjustHeightFromTerrain(m_pTerrain);
+	}
 
 	Scene::Update(fTimeElapsed);
 }

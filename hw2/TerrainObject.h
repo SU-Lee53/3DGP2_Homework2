@@ -11,7 +11,7 @@ public:
 	HeightMapRawImage(std::string_view wsvFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
 	~HeightMapRawImage();
 
-	float GetHeight(float fx, float fz);
+	float GetHeight(float fx, float fz, bool bReverseQuad = false);
 	XMFLOAT3 GetHeightMapNormal(int x, int z);
 
 	XMFLOAT3 GetScale() { return m_xmf3Scale; }
@@ -54,8 +54,8 @@ public:
 
 
 public:
-	float GetHeight(float x, float z) { return (m_pHeightMapImage->GetHeight(x / m_xmf3Scale.x, z / m_xmf3Scale.z) * m_xmf3Scale.y); }
-	XMFLOAT3 GetNormal(float x, float z) { return (m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z / m_xmf3Scale.z)));  }
+	float GetHeight(float x, float z, bool bReverseQuad = false) { return m_pHeightMapImage->GetHeight(x, z, bReverseQuad) * m_xmf3Scale.y; } //World
+	XMFLOAT3 GetNormal(float x, float z) { return m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z / m_xmf3Scale.z));  }
 
 	int GetHeightMapWidth() { return m_pHeightMapImage->GetHeightMapWidth(); }
 	int GetHeightMapLength() { return m_pHeightMapImage->GetHeightMapLength(); }

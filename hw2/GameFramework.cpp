@@ -512,6 +512,17 @@ void GameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPAR
 	}
 
 	switch (nMessageID) {
+	case WM_KEYDOWN:
+		switch (wParam) {
+		case VK_F1:
+			RenderManager::g_bRenderOBBForDebug = !RenderManager::g_bRenderOBBForDebug;
+			break;
+		default:
+			break;
+		}
+		break;
+
+
 	case WM_KEYUP:
 		switch (wParam) {
 		case VK_ESCAPE:

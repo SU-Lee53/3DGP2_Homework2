@@ -38,11 +38,11 @@ HeightMapRawImage::~HeightMapRawImage()
 {
 }
 
-float HeightMapRawImage::GetHeight(float fx, float fz)
+float HeightMapRawImage::GetHeight(float fx, float fz, bool bReverseQuad)
 {
-	if ((fx < 0.f) || (fz < 0.f) || (fx >= m_nWidth) || (fz >= m_nLength)) {
-		return 0.0f;
-	}
+	fx = fx / m_xmf3Scale.x;
+	fz = fz / m_xmf3Scale.z;
+	if ((fx < 0.0f) || (fz < 0.0f) || (fx >= m_nWidth) || (fz >= m_nLength)) return(0.0f);
 
 	int x = (int)fx;
 	int z = (int)fz;
@@ -53,26 +53,25 @@ float HeightMapRawImage::GetHeight(float fx, float fz)
 	float fBottomRight = (float)m_HeightMapPixels[(x + 1) + (z * m_nWidth)];
 	float fTopLeft = (float)m_HeightMapPixels[x + ((z + 1) * m_nWidth)];
 	float fTopRight = (float)m_HeightMapPixels[(x + 1) + ((z + 1) * m_nWidth)];
-
-	bool bRightToLeft = ((z % 2) != 0);
-	if (bRightToLeft) {
+	if (bReverseQuad)
+	{
 		if (fzPercent >= fxPercent)
 			fBottomRight = fBottomLeft + (fTopRight - fTopLeft);
 		else
 			fTopLeft = fTopRight + (fBottomLeft - fBottomRight);
 	}
-	else {
+	else
+	{
 		if (fzPercent < (1.0f - fxPercent))
 			fTopRight = fTopLeft + (fBottomRight - fBottomLeft);
 		else
 			fBottomLeft = fTopLeft + (fBottomRight - fTopRight);
 	}
-
 	float fTopHeight = fTopLeft * (1 - fxPercent) + fTopRight * fxPercent;
 	float fBottomHeight = fBottomLeft * (1 - fxPercent) + fBottomRight * fxPercent;
 	float fHeight = fBottomHeight * (1 - fzPercent) + fTopHeight * fzPercent;
 
-	return fHeight;
+	return(fHeight);
 }
 
 XMFLOAT3 HeightMapRawImage::GetHeightMapNormal(int x, int z)
@@ -216,8 +215,9 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 	SetChild(pWaterGridObject);
 }
 
-void TerrainObject::?>(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color)
+void TerrainObject::CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color)
 {
+	// TODO : Make it happen
 }
 
 void TerrainObject::Update(float fTimeElapsed)

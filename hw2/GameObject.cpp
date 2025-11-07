@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameObject.h"
+#include "TerrainObject.h"
 #include <filesystem>
 
 GameObject::GameObject()
@@ -55,14 +56,40 @@ void GameObject::Animate(float fTimeElapsed)
 
 void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
+	if (!m_pParent) {
+		// Set
+		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
+
+		XMFLOAT4 xmf4DebugColor(0.f, 1.f, 0.f, 1.f);
+
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &m_xmOBBInWorld.Center, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &m_xmOBBInWorld.Extents, 4);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &m_xmOBBInWorld.Orientation, 8);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmf4DebugColor, 12);
+
+		// Draw
+		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		SHADER->Get<OBBDebugShader>()->OnPrepareRender(pd3dCommandList);
+
+		pd3dCommandList->DrawInstanced(1, 1, 0, 0);
+
+		for (auto& pObj : m_pChildren) {
+			pObj->RenderOBB(pd3dCommandList);
+		}
+	}
+	
 	if (m_pMesh) {
 		// Set
 		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
+
+		XMFLOAT4 xmf4DebugColor(1.f, 0.f, 0.f, 1.f);
 
 		BoundingOrientedBox xmOBB = m_pMesh->GetOBB();
 		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Center, 0);
 		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Extents, 4);
 		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmOBB.Orientation, 8);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmf4DebugColor, 12);
 
 		// Draw
 		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
@@ -74,6 +101,20 @@ void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 	for (auto& pObj : m_pChildren) {
 		pObj->RenderOBB(pd3dCommandList);
+	}
+}
+
+void GameObject::AdjustHeightFromTerrain(std::shared_ptr<TerrainObject> pTerrain)
+{
+	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
+	XMFLOAT3 xmf3Position = GetPosition();
+	int z = (int)(xmf3Position.z / xmf3Scale.z);
+	bool bReverseQuad = ((z % 2) != 0);
+	float fHeight = pTerrain->GetHeight(xmf3Position.x, xmf3Position.z, bReverseQuad) + m_fHalfHeight;
+	if (xmf3Position.y < fHeight)
+	{
+		xmf3Position.y = fHeight;
+		SetPosition(xmf3Position);
 	}
 }
 
@@ -175,6 +216,11 @@ void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 		m_pMesh->UpdateOBB(m_xmf4x4World);
 	}
 
+	if (!m_pParent) {
+		m_xmOBBInWorld = m_xmOBB;
+		m_xmOBB.Transform(m_xmOBBInWorld, XMLoadFloat4x4(&m_xmf4x4World));
+	}
+
 	for (auto& pChild : m_pChildren) {
 		pChild->UpdateTransform(&m_xmf4x4World);
 	}
@@ -194,6 +240,64 @@ std::shared_ptr<GameObject> GameObject::FindFrame(const std::string& strFrameNam
 	}
 
 	return nullptr;
+}
+
+void GameObject::GenerateBigBoundingBox()
+{
+	if (m_pChildren.size() == 0) {
+		return;
+	}
+
+	float fMinX = FLT_MAX;
+	float fMinY = FLT_MAX;
+	float fMinZ = FLT_MAX;
+	
+	float fMaxX = FLT_MIN;
+	float fMaxY = FLT_MIN;
+	float fMaxZ = FLT_MIN;
+
+	for (auto pChild : m_pChildren) {
+		pChild->UpdateMinMaxInBoundingBox(fMinX, fMaxX, fMinY, fMaxY, fMinZ, fMaxZ);
+	}
+
+	float fHalfLengthX = abs(fMaxX - fMinX) / 2;
+	float fHalfLengthY = abs(fMaxY - fMinY) / 2;
+	float fHalfLengthZ = abs(fMaxZ - fMinZ) / 2;
+
+	float fCenterX = (fMaxX + fMinX) / 2;
+	float fCenterY = (fMaxY + fMinY) / 2;
+	float fCenterZ = (fMaxZ + fMinZ) / 2;
+
+	m_xmOBB.Center = XMFLOAT3(fCenterX, fCenterY, fCenterZ);
+	m_xmOBB.Extents = XMFLOAT3(fHalfLengthX, fHalfLengthY, fHalfLengthZ);
+	m_fHalfHeight = fHalfLengthY;
+}
+
+void GameObject::UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fMinY, float& fMaxY, float& fMinZ, float& fMaxZ)
+{
+	if (m_pMesh) {
+		BoundingOrientedBox xmOBBFromMesh = m_pMesh->GetOBB();
+		XMVECTOR xmvOBBCenter = XMLoadFloat3(&xmOBBFromMesh.Center);
+		XMVECTOR xmvOBBExtent = XMLoadFloat3(&xmOBBFromMesh.Extents);
+		XMVECTOR xmvOBBOrientation = XMLoadFloat4(&xmOBBFromMesh.Orientation);
+
+		XMFLOAT3 xmf3OBBMax;
+		XMFLOAT3 xmf3OBBMin;
+		XMStoreFloat3(&xmf3OBBMax, XMVector3Rotate(XMVectorAdd(xmvOBBCenter, xmvOBBExtent), xmvOBBOrientation));
+		XMStoreFloat3(&xmf3OBBMin, XMVector3Rotate(XMVectorSubtract(xmvOBBCenter, xmvOBBExtent), xmvOBBOrientation));
+
+		fMinX = min(fMinX, xmf3OBBMin.x);
+		fMinY = min(fMinY, xmf3OBBMin.y);
+		fMinZ = min(fMinZ, xmf3OBBMin.z);
+
+		fMaxX = max(fMaxX, xmf3OBBMax.x);
+		fMaxY = max(fMaxY, xmf3OBBMax.y);
+		fMaxZ = max(fMaxZ, xmf3OBBMax.z);
+	}
+
+	for (auto pChild : m_pChildren) {
+		pChild->UpdateMinMaxInBoundingBox(fMinX, fMaxX, fMinY, fMaxY, fMinZ, fMaxZ);
+	}
 }
 
 void GameObject::AddToRenderMap()

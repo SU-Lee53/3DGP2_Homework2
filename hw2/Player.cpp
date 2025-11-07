@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Player.h"
+#include "TerrainObject.h"
 
 Player::Player()
 {
@@ -216,6 +217,23 @@ void Player::OnPrepareRender()
 	UpdateTransform(NULL);
 }
 
+void Player::AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerrain)
+{
+	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
+	XMFLOAT3 xmf3PlayerPosition = GetPosition();
+	int z = (int)(xmf3PlayerPosition.z / xmf3Scale.z);
+	bool bReverseQuad = ((z % 2) != 0);
+	float fHeight = pTerrain->GetHeight(xmf3PlayerPosition.x, xmf3PlayerPosition.z, bReverseQuad) + m_fHalfHeight;
+	if (xmf3PlayerPosition.y < fHeight)
+	{
+		XMFLOAT3 xmf3PlayerVelocity = GetVelocity();
+		xmf3PlayerVelocity.y = 0.0f;
+		SetVelocity(xmf3PlayerVelocity);
+		xmf3PlayerPosition.y = fHeight;
+		SetPosition(xmf3PlayerPosition);
+	}
+}
+
 AirplanePlayer::AirplanePlayer(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dGraphicsRootSignature)
 {
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
@@ -232,6 +250,8 @@ void AirplanePlayer::Initialize()
 
 	m_pCamera->SetPosition(Vector3::Add(m_xmf3Position, m_pCamera->GetOffset()));
 	Update(0.0f);
+
+	GenerateBigBoundingBox();
 }
 
 void AirplanePlayer::Animate(float fTimeElapsed)

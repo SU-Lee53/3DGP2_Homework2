@@ -38,7 +38,9 @@ public:
 	virtual void Update(float fTimeElapsed);
 	virtual void Animate(float fTimeElapsed);
 
-	void RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual void RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+
+	virtual void AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerrain);
 
 	XMFLOAT3 GetPosition();
 	XMFLOAT3 GetLook();
@@ -62,6 +64,12 @@ public:
 	std::shared_ptr<GameObject> FindFrame(const std::string& strFrameName);
 
 	UINT GetMeshType() { return((m_pMesh) ? m_pMesh->GetType() : 0); }
+
+public:
+	void GenerateBigBoundingBox();
+
+private:
+	void UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fMinY, float& fMaxY, float& fMinZ, float& fMaxZ);
 
 public:
 	XMFLOAT4X4 GetWorldMatrix() const { return m_xmf4x4World; }
@@ -90,6 +98,8 @@ public:
 	std::vector<std::shared_ptr<GameObject>> m_pChildren;
 
 	BoundingOrientedBox m_xmOBB;
+	BoundingOrientedBox m_xmOBBInWorld;
+	float m_fHalfHeight = 0.f;	// Terrain 충돌 확인용 fHalfHeight
 
 public:
 	void LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);

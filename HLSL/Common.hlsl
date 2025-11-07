@@ -114,6 +114,7 @@ cbuffer cbOBBDebugData : register(b4)
     float3 gvOBBCenter;
     float3 gvOBBExtent;
     float4 gvOBBOrientationQuat;
+    float4 gcColor;
 };
 
 #endif

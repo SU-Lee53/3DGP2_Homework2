@@ -42,6 +42,8 @@ public:
 	virtual std::shared_ptr<Camera> ChangeCamera(UINT nNewCameraMode, float fTimeElapsed) { return nullptr; }
 	virtual void OnPrepareRender() override;
 
+	virtual void AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerrain) override;
+
 protected:
 	XMFLOAT3					m_xmf3Position;
 	XMFLOAT3					m_xmf3Right;
@@ -74,6 +76,7 @@ public:
 private:
 	virtual void Initialize() override;
 	virtual void Animate(float fTimeElapsed) override;
+
 
 public:
 	virtual std::shared_ptr<Camera> ChangeCamera(UINT nNewCameraMode, float fTimeElapsed) override;

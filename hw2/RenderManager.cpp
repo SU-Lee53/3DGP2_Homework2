@@ -183,7 +183,7 @@ void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
 		d3dRootParameters[5].InitAsDescriptorTable(1, &d3dDescriptorRanges[5], D3D12_SHADER_VISIBILITY_ALL);
 
 		// 디버그용 OBB 그리기
-		d3dRootParameters[6].InitAsConstants(12, 4, 0, D3D12_SHADER_VISIBILITY_ALL);	// Center + Extent + Orientation
+		d3dRootParameters[6].InitAsConstants(16, 4, 0, D3D12_SHADER_VISIBILITY_ALL);	// Center + Extent + Orientation + Color
 	}
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT

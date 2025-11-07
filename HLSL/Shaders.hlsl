@@ -262,5 +262,5 @@ void GSDebug(point VS_DEBUG_OUTPUT input[1], inout TriangleStream<GS_DEBUG_OUTPU
 
 float4 PSDebug(GS_DEBUG_OUTPUT input) : SV_Target0
 {
-    return float4(1.f, 0.f, 0.f, 0.f);
+    return gcColor;
 }
