@@ -101,7 +101,7 @@ protected:
 
 };
 
-class TerrainHeightMap;
+class HeightMapRawImage;
 
 class TerrainMesh : public Mesh {
 
@@ -111,7 +111,7 @@ public:
 
 public:
 	void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int xStart, int zStart, 
-		int nWidth, int nLength, XMFLOAT3 xmf3Scale = XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT4 xmf4Color = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.0f), std::shared_ptr<TerrainHeightMap> pHeightMap = nullptr);
+		int nWidth, int nLength, XMFLOAT3 xmf3Scale = XMFLOAT3(1.0f, 1.0f, 1.0f), XMFLOAT4 xmf4Color = XMFLOAT4(1.0f, 1.0f, 0.0f, 0.0f), std::shared_ptr<HeightMapRawImage> pHeightMap = nullptr);
 
 	virtual void ReleaseUploadBuffers() override;
 	virtual void Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nSubSet, int nInstanceCount = 1) override;
@@ -121,8 +121,8 @@ public:
 	int GetWidth() { return(m_nWidth); }
 	int GetLength() { return(m_nLength); }
 
-	virtual float GetHeight(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap);
-	virtual XMFLOAT4 GetColor(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap);
+	virtual float GetHeight(int x, int z, std::shared_ptr<HeightMapRawImage> pHeightMap);
+	virtual XMFLOAT4 GetColor(int x, int z, std::shared_ptr<HeightMapRawImage> pHeightMap);
 
 protected:
 	int							m_nWidth;

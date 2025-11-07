@@ -285,7 +285,7 @@ TerrainMesh::~TerrainMesh()
 	__debugbreak();
 }
 
-void TerrainMesh::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int xStart, int zStart, int nWidth, int nLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color, std::shared_ptr<TerrainHeightMap> pHeightMap)
+void TerrainMesh::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int xStart, int zStart, int nWidth, int nLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color, std::shared_ptr<HeightMapRawImage> pHeightMap)
 {
 	m_nVertices = nWidth * nLength;
 	m_nOffset = 0;
@@ -423,7 +423,7 @@ void TerrainMesh::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int 
 	}
 }
 
-float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap)
+float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<HeightMapRawImage> pHeightMap)
 {
 	if (!pHeightMap) return 0.f;
 
@@ -434,7 +434,7 @@ float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<TerrainHeightMap> pHe
 	return fHeight;
 }
 
-XMFLOAT4 TerrainMesh::GetColor(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap)
+XMFLOAT4 TerrainMesh::GetColor(int x, int z, std::shared_ptr<HeightMapRawImage> pHeightMap)
 {
 	if (!pHeightMap) return XMFLOAT4(0.f, 0.f, 0.f, 1.f);
 

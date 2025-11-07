@@ -139,6 +139,36 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET0
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OBBDebugShader
 
+struct VS_BILLBOARD_OUTPUT
+{
+    float4 position : POSITION;
+};
+
+struct GS_BILLBOARD_OUTPUT
+{
+    float4 position : SV_Position;
+};
+
+VS_BILLBOARD_OUTPUT VSBillboard(uint nVertexID : SV_VertexID)
+{
+    VS_BILLBOARD_OUTPUT output;
+    output.position = float4(0.f, 0.f, 0.f, 1.f);
+    return output;
+}
+
+[maxvertexcount(24)]
+void GSBillboard(point VS_BILLBOARD_OUTPUT input[1], inout TriangleStream<GS_BILLBOARD_OUTPUT> outStream)
+{
+}
+
+float4 PSBillboard(GS_BILLBOARD_OUTPUT input) : SV_Target0
+{
+    return float4(1.f, 0.f, 0.f, 0.f);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OBBDebugShader
+
 struct VS_DEBUG_OUTPUT
 {
     float4 position : POSITION;

@@ -4,9 +4,9 @@
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// TerrainHeightMap
+// HeightMapRawImage
 
-TerrainHeightMap::TerrainHeightMap(std::string_view svFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale)
+HeightMapRawImage::HeightMapRawImage(std::string_view svFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale)
 {
 	m_nWidth = nWidth;
 	m_nLength = nLength;
@@ -34,11 +34,11 @@ TerrainHeightMap::TerrainHeightMap(std::string_view svFileName, int nWidth, int 
 	}
 }
 
-TerrainHeightMap::~TerrainHeightMap()
+HeightMapRawImage::~HeightMapRawImage()
 {
 }
 
-float TerrainHeightMap::GetHeight(float fx, float fz)
+float HeightMapRawImage::GetHeight(float fx, float fz)
 {
 	if ((fx < 0.f) || (fz < 0.f) || (fx >= m_nWidth) || (fz >= m_nLength)) {
 		return 0.0f;
@@ -75,7 +75,7 @@ float TerrainHeightMap::GetHeight(float fx, float fz)
 	return fHeight;
 }
 
-XMFLOAT3 TerrainHeightMap::GetHeightMapNormal(int x, int z)
+XMFLOAT3 HeightMapRawImage::GetHeightMapNormal(int x, int z)
 {
 	if ((x < 0.0f) || (z < 0.0f) || (x >= m_nWidth) || (z >= m_nLength)) {
 		return XMFLOAT3(0.f, 1.f, 0.f);
@@ -113,7 +113,7 @@ void TerrainObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 	m_nWidth = nWidth;
 	m_nLength = nLength;
 	m_xmf3Scale = xmf3Scale;
-	m_pHeightMapImage = make_shared<TerrainHeightMap>(strFileName, nWidth, nLength, xmf3Scale);
+	m_pHeightMapImage = make_shared<HeightMapRawImage>(strFileName, nWidth, nLength, xmf3Scale);
 
 	int cxQuadsPerBlock = nBlockWidth - 1;
 	int czQuadsPerBlock = nBlockLength - 1;
@@ -214,6 +214,10 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 	XMStoreFloat4x4(&pWaterGridObject->m_xmf4x4Transform, XMMatrixTranslation(0.f, 250.f, 0.f));
 
 	SetChild(pWaterGridObject);
+}
+
+void TerrainObject::?>(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color)
+{
 }
 
 void TerrainObject::Update(float fTimeElapsed)

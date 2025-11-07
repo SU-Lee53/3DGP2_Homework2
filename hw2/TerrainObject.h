@@ -6,10 +6,10 @@ struct CB_TERRAIN_DATA {
 	XMFLOAT2 xmf2UVTranslation = XMFLOAT2(0,0);
 };
 
-class TerrainHeightMap {
+class HeightMapRawImage {
 public:
-	TerrainHeightMap(std::string_view wsvFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
-	~TerrainHeightMap();
+	HeightMapRawImage(std::string_view wsvFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
+	~HeightMapRawImage();
 
 	float GetHeight(float fx, float fz);
 	XMFLOAT3 GetHeightMapNormal(int x, int z);
@@ -45,6 +45,9 @@ public:
 	void CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
 		int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
 
+	void CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList,
+		const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
+
 	void UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void Update(float fTimeElapsed) override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
@@ -65,7 +68,7 @@ public:
 	std::array<XMFLOAT4, 4>& GetWallPlanes() { return m_xmf4MapBoundaryPlanes; }
 
 private:
-	std::shared_ptr<TerrainHeightMap>			m_pHeightMapImage = nullptr;
+	std::shared_ptr<HeightMapRawImage>			m_pHeightMapImage = nullptr;
 	std::vector<std::shared_ptr<TerrainMesh>>	m_pTerrainMeshes = {};
 
 	std::shared_ptr<TerrainObject>				m_pChildTerrain = nullptr;
