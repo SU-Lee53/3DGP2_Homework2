@@ -26,6 +26,8 @@
 #include <map>
 #include <list>
 #include <ranges>
+#include <concepts>
+#include <typeindex>
 
 #include <string>
 #ifdef UNICODE

@@ -20,6 +20,9 @@ public:
 	size_t GetSubSetCount() { return m_nSubMeshes; }
 	VERTEX_TYPE GetType() { return (VERTEX_TYPE)m_nType; }
 
+	const BoundingOrientedBox& GetOBB() const { return m_xmOBBInWorld; }
+	void UpdateOBB(XMFLOAT4X4 xmf4x4World);
+
 	virtual void ReleaseUploadBuffers();
 
 protected:
@@ -37,7 +40,7 @@ protected:
 	std::vector<XMFLOAT3>		m_xmf3Positions{};
 	ComPtr<ID3D12Resource>		m_pd3dPositionBuffer = nullptr;
 	ComPtr<ID3D12Resource>		m_pd3dPositionUploadBuffer = nullptr;
-	D3D12_VERTEX_BUFFER_VIEW	m_d3dPositionBufferView;
+	D3D12_VERTEX_BUFFER_VIEW	m_d3dPositionBufferView{};
 	
 	UINT									m_nSubMeshes = 0;
 	std::vector<int>						m_nSubSetIndices;
@@ -49,6 +52,7 @@ protected:
 	XMFLOAT3				m_xmf3AABBCenter = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT3				m_xmf3AABBExtents = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	BoundingOrientedBox		m_xmOBB{};
+	BoundingOrientedBox		m_xmOBBInWorld{};
 
 public:
 	virtual void Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) {}

@@ -5,6 +5,7 @@
 #include "RenderManager.h"
 #include "UIManager.h"
 #include "TextureManager.h"
+#include "ShaderManager.h"
 
 class Scene;
 
@@ -19,6 +20,9 @@ public:
 	void Update();
 	void Render();
 
+public:
+	static void ChangeScene(UINT nSceneIndex);
+
 private:
 	void RenderBegin();
 	void RenderEnd();
@@ -31,8 +35,9 @@ public:
 	LRESULT CALLBACK OnProcessingWindowMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam);
 
 public:
-	std::vector<std::shared_ptr<Scene>>	m_pScenes{};
+	static std::vector<std::shared_ptr<Scene>>	g_pScenes;
 	static std::shared_ptr<Scene> g_pCurrentScene;
+	static bool g_bSceneChanged;
 
 public:
 	GameTimer				m_GameTimer{};
@@ -44,6 +49,7 @@ public:
 	static std::unique_ptr<RenderManager>		g_pRenderManager;
 	static std::unique_ptr<UIManager>			g_pUIManager;
 	static std::unique_ptr<TextureManager>		g_pTextureManager;
+	static std::unique_ptr<ShaderManager>		g_pShaderManager;
 
 #pragma region D3D
 private:
@@ -121,5 +127,6 @@ private:
 #define RENDER GameFramework::g_pRenderManager
 #define UI GameFramework::g_pUIManager
 #define TEXTURE GameFramework::g_pTextureManager
+#define SHADER GameFramework::g_pShaderManager
 
 #define CUR_SCENE GameFramework::g_pCurrentScene

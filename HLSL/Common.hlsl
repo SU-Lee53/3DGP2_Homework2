@@ -54,9 +54,10 @@ cbuffer cbLightData : register(b1)
 cbuffer cbTerrainData : register(b2)
 {
     matrix gmtxTerrainWorld;
+    float2 gmtxTerrainUVOffset;
 };
 
-Texture2DArray gtxtarrSkybox : register(t0);
+Texture2DArray gtxtSkyboxarr : register(t0);
 
 SamplerState gssWrap : register(s0);
 SamplerState gssClamp : register(s1);
@@ -79,13 +80,13 @@ cbuffer cbGameObjectData : register(b3)
     int gnBaseIndex;
 };
 
-Texture2D gtxtAlbedoMap         : register(t2);
-Texture2D gtxtSpecularMap       : register(t3);
-Texture2D gtxtNormalMap         : register(t4);
-Texture2D gtxtMetaillicMap      : register(t5);
-Texture2D gtxtEmissionMap       : register(t6);
-Texture2D gtxtDetailAlbedoMap   : register(t7);
-Texture2D gtxtDetailNormalMap   : register(t8);
+Texture2D gtxtAlbedoMap         : register(t1);
+Texture2D gtxtSpecularMap       : register(t2);
+Texture2D gtxtNormalMap         : register(t3);
+Texture2D gtxtMetallicMap      : register(t4);
+Texture2D gtxtEmissionMap       : register(t5);
+Texture2D gtxtDetailAlbedoMap   : register(t6);
+Texture2D gtxtDetailNormalMap   : register(t7);
 
 #define MATERIAL_TYPE_ALBEDO_MAP           0x01
 #define MATERIAL_TYPE_SPECULAR_MAP         0x02
@@ -103,7 +104,7 @@ Texture2D gtxtDetailNormalMap   : register(t8);
 //    matrix mtxGameObject;
 //};
 
-StructuredBuffer<matrix> sbInstanceData : register(t11);
+StructuredBuffer<matrix> sbInstanceData : register(t8);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug Data 

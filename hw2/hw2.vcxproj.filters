@@ -19,11 +19,11 @@
     <Filter Include="DirectXTex">
       <UniqueIdentifier>{01d56613-e24a-42c5-a3e1-bf630d040da7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="소스 파일\Terrain">
-      <UniqueIdentifier>{673bb85e-d015-4025-9c3a-7cfa92513c9b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="소스 파일\Scenes">
+    <Filter Include="Scenes">
       <UniqueIdentifier>{c64caf40-6f3e-45e8-a5e6-a915c82534bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Terrain">
+      <UniqueIdentifier>{673bb85e-d015-4025-9c3a-7cfa92513c9b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -109,13 +109,16 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="IntroScene.h">
-      <Filter>소스 파일\Scenes</Filter>
+      <Filter>Scenes</Filter>
     </ClInclude>
     <ClInclude Include="GameScene.h">
-      <Filter>소스 파일\Scenes</Filter>
+      <Filter>Scenes</Filter>
     </ClInclude>
     <ClInclude Include="TerrainObject.h">
-      <Filter>소스 파일\Terrain</Filter>
+      <Filter>Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="ShaderManager.h">
+      <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -189,13 +192,16 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="IntroScene.cpp">
-      <Filter>소스 파일\Scenes</Filter>
+      <Filter>Scenes</Filter>
     </ClCompile>
     <ClCompile Include="GameScene.cpp">
-      <Filter>소스 파일\Scenes</Filter>
+      <Filter>Scenes</Filter>
     </ClCompile>
     <ClCompile Include="TerrainObject.cpp">
-      <Filter>소스 파일\Terrain</Filter>
+      <Filter>Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="ShaderManager.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

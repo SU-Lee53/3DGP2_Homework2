@@ -43,14 +43,16 @@ public:
 	void Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	void Clear();
 
+	void SetTerrain(std::shared_ptr<TerrainObject> pTerrainObject) { m_pTerrain = pTerrainObject; }
+
 	size_t GetMeshCount() const;
 	UINT GetDrawCallCount() const { return m_nDrawCalls; };
 	ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap() { return m_pd3dDescriptorHeap; }
 	void SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const;
 
 private:
-	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, IN OUT DescriptorHandle& refDescHandle);
-
+	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	void RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
 	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 
@@ -59,15 +61,18 @@ private:
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceDatas;
 	UINT m_nInstanceIndex = 0;
-	
 
+	std::shared_ptr<class TerrainObject>	m_pTerrain;
+	
 	ComPtr<ID3D12Device>			m_pd3dDevice = nullptr;	// GameFramewok::m_pd3dDevice ÀÇ ÂüÁ¶
 	ComPtr<ID3D12DescriptorHeap>	m_pd3dDescriptorHeap = nullptr;
+	DescriptorHandle				m_DescriptorHandle;
+
 	StructuredBuffer				m_InstanceDataSBuffer;
 
 	UINT m_nDrawCalls = 0;
 
 public:
 	static ComPtr<ID3D12RootSignature> g_pd3dRootSignature;
-
+	static bool g_bRenderOBBForDebug;
 };

@@ -10,6 +10,12 @@ Mesh::Mesh()
 {
 }
 
+void Mesh::UpdateOBB(XMFLOAT4X4 xmf4x4World)
+{
+	m_xmOBBInWorld = m_xmOBB;
+	m_xmOBB.Transform(m_xmOBBInWorld, XMLoadFloat4x4(&xmf4x4World));
+}
+
 void Mesh::ReleaseUploadBuffers()
 {
 	if (m_pd3dPositionUploadBuffer) {
@@ -169,7 +175,6 @@ void StandardMesh::LoadMeshFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D
 			}
 		}
 		else if (strRead == "<SubMeshes>:") {
-			int m_nSubMeshes;
 			inFile.read((char*)&m_nSubMeshes, sizeof(int));
 			if (m_nSubMeshes > 0) {
 				m_nSubSetIndices.resize(m_nSubMeshes);
@@ -189,9 +194,8 @@ void StandardMesh::LoadMeshFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D
 							m_IndicesBySubset[i].resize(m_nSubSetIndices[i]);
 							inFile.read((char*)m_IndicesBySubset[i].data(), sizeof(UINT) * m_nSubSetIndices[i]);
 
-							m_pd3dSubSetIndexBuffers[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_IndicesBySubset[i].data(), m_IndicesBySubset.size() * sizeof(UINT),
-								D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_pd3dBiTangentUploadBuffer.GetAddressOf());
-
+							m_pd3dSubSetIndexBuffers[i] = ::CreateBufferResource(pd3dDevice, pd3dCommandList, m_IndicesBySubset[i].data(), m_IndicesBySubset[i].size() * sizeof(UINT),
+								D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_INDEX_BUFFER, m_pd3dSubSetIndexUploadBuffers[i].GetAddressOf());
 
 							m_d3dSubSetIndexBufferViews[i].BufferLocation = m_pd3dSubSetIndexBuffers[i]->GetGPUVirtualAddress();
 							m_d3dSubSetIndexBufferViews[i].Format = DXGI_FORMAT_R32_UINT;
@@ -278,6 +282,7 @@ TerrainMesh::TerrainMesh()
 
 TerrainMesh::~TerrainMesh()
 {
+	__debugbreak();
 }
 
 void TerrainMesh::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int xStart, int zStart, int nWidth, int nLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color, std::shared_ptr<TerrainHeightMap> pHeightMap)
@@ -291,8 +296,8 @@ void TerrainMesh::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsC
 	m_nLength = nLength;
 	m_xmf3Scale = xmf3Scale;
 
-	int cxHeightMap = pHeightMap->GetHeightMapWidth();
-	int czHeightMap = pHeightMap->GetHeightMapLength();
+	int cxHeightMap = pHeightMap ? pHeightMap->GetHeightMapWidth() : 0;
+	int czHeightMap = pHeightMap ? pHeightMap->GetHeightMapLength() : 0;
 
 	m_xmf3Positions.resize(m_nVertices);
 	m_xmf4Colors.resize(m_nVertices);
@@ -420,6 +425,8 @@ void TerrainMesh::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int 
 
 float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap)
 {
+	if (!pHeightMap) return 0.f;
+
 	std::vector<BYTE>& pHeightMapPixels = pHeightMap->GetHeightMapPixels();
 	XMFLOAT3 xmf3Scale = pHeightMap->GetScale();
 	int nWidth = pHeightMap->GetHeightMapWidth();
@@ -429,6 +436,8 @@ float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<TerrainHeightMap> pHe
 
 XMFLOAT4 TerrainMesh::GetColor(int x, int z, std::shared_ptr<TerrainHeightMap> pHeightMap)
 {
+	if (!pHeightMap) return XMFLOAT4(0.f, 0.f, 0.f, 1.f);
+
 	XMFLOAT3 xmf3LightDirection = XMFLOAT3(-1.0f, 1.0f, 1.0f);
 	xmf3LightDirection = Vector3::Normalize(xmf3LightDirection);
 	XMFLOAT3 xmf3Scale = pHeightMap->GetScale();

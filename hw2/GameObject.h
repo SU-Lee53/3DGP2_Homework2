@@ -16,6 +16,12 @@ struct CB_OBJECT_DATA {
 	CB_MATERIAL_DATA materialData;
 };
 
+struct CB_OBB_DEBUG_DATA {
+	XMFLOAT3 gvOBBCenter;
+	XMFLOAT3 gvOBBExtent;
+	XMFLOAT4 gvOBBOrientationQuat;
+};
+
 class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
 	GameObject();
@@ -31,6 +37,8 @@ public:
 	virtual void Initialize() {}
 	virtual void Update(float fTimeElapsed);
 	virtual void Animate(float fTimeElapsed);
+
+	void RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
 	XMFLOAT3 GetPosition();
 	XMFLOAT3 GetLook();
@@ -60,6 +68,8 @@ public:
 	std::shared_ptr<Mesh> GetMesh() const { return m_pMesh; }
 	std::vector<std::shared_ptr<Material>>& GetMaterials() { return m_pMaterials; }
 
+	void SetName(const std::string& strName) { m_strFrameName = strName; }
+
 public:
 	virtual void OnPrepareRender() {}
 	virtual void AddToRenderMap();
@@ -78,6 +88,8 @@ public:
 
 	std::shared_ptr<GameObject> m_pParent;
 	std::vector<std::shared_ptr<GameObject>> m_pChildren;
+
+	BoundingOrientedBox m_xmOBB;
 
 public:
 	void LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);

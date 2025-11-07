@@ -5,11 +5,14 @@
 
 #define MAX_LIGHTS 16
 
+class TerrainObject;
+
 struct CB_LIGHT_DATA {
 	LightData	LightData[MAX_LIGHTS];
 	XMFLOAT4		globalAmbientLight;
 	int				nLights;
 };
+
 
 class Scene {
 public:
@@ -23,6 +26,7 @@ public:
 	virtual bool ProcessInput(UCHAR* pKeysBuffer);
 	virtual void Update(float fTimeElapsed);
 	virtual void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual void RenderDebug(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
 	virtual void CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
@@ -39,6 +43,8 @@ public:
 public:
 	std::shared_ptr<Sprite> CheckButtonClicked();
 
+	const std::shared_ptr<TerrainObject>& GetTerrain() { return m_pTerrain; }
+
 public:
 	std::shared_ptr<Camera> GetCamera() const;
 	const ConstantBuffer& GetCBuffer() const { return m_LightCBuffer; }
@@ -49,6 +55,9 @@ protected:
 	std::vector<std::shared_ptr<GameObject>>	m_pGameObjects;
 	std::vector<std::shared_ptr<Light>>			m_pLights;
 	std::vector<std::shared_ptr<Sprite>>		m_pSprites;
+
+	std::shared_ptr<TerrainObject>				m_pTerrain;
+	// TODO : Add Skybox
 
 	XMFLOAT4									m_xmf4GlobalAmbient;
 

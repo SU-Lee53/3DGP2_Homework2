@@ -16,8 +16,11 @@ std::unique_ptr<ResourceManager>	GameFramework::g_pResourceManager = nullptr;
 std::unique_ptr<RenderManager>		GameFramework::g_pRenderManager = nullptr;
 std::unique_ptr<UIManager>			GameFramework::g_pUIManager = nullptr;
 std::unique_ptr<TextureManager>		GameFramework::g_pTextureManager = nullptr;
+std::unique_ptr<ShaderManager>		GameFramework::g_pShaderManager = nullptr;
 
-std::shared_ptr<Scene>				GameFramework::g_pCurrentScene = nullptr;
+std::vector<std::shared_ptr<Scene>>		GameFramework::g_pScenes{};
+std::shared_ptr<Scene>					GameFramework::g_pCurrentScene = nullptr;
+bool									GameFramework::g_bSceneChanged = false;
 
 GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT uiHeight, bool bEnableDebugLayer)
 {
@@ -44,6 +47,8 @@ GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT 
 	g_pResourceManager = std::make_unique<ResourceManager>();
 	g_pTextureManager = std::make_unique<TextureManager>(m_pd3dDevice);
 	g_pRenderManager = std::make_unique<RenderManager>(m_pd3dDevice, m_pd3dCommandList);
+	g_pShaderManager = std::make_unique<ShaderManager>(m_pd3dDevice);
+	g_pShaderManager->Initialize();
 
 	g_pUIManager = std::make_unique<UIManager>(m_pd3dDevice);
 
@@ -67,13 +72,13 @@ void GameFramework::BuildObjects()
 
 		std::shared_ptr<IntroScene> pIntroScene = std::make_shared<IntroScene>();
 		pIntroScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
-		m_pScenes.push_back(pIntroScene);
+		g_pScenes.push_back(pIntroScene);
 
 		std::shared_ptr<GameScene> pGameScene = std::make_shared<GameScene>();
 		pGameScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
-		m_pScenes.push_back(pGameScene);
+		g_pScenes.push_back(pGameScene);
 
-		g_pCurrentScene = m_pScenes[0];
+		g_pCurrentScene = g_pScenes[0];
 	}
 
 	m_pd3dCommandList->Close();
@@ -82,7 +87,7 @@ void GameFramework::BuildObjects()
 
 	WaitForGPUComplete();
 
-	for (auto& pScene : m_pScenes) {
+	for (auto& pScene : g_pScenes) {
 		pScene->ReleaseUploadBuffers();
 	}
 
@@ -91,26 +96,42 @@ void GameFramework::BuildObjects()
 
 void GameFramework::Update()
 {
+	if (g_bSceneChanged) {
+		g_bSceneChanged = false;
+	}
+
 	//OutputDebugStringA(std::format("==================\nTimeElapsed : {}\n==================\n", m_GameTimer.GetTimeElapsed()).c_str());
 	m_GameTimer.Tick(0.0f);
 
 	ProcessInput();
+	if (g_bSceneChanged) return;
+
 	g_pCurrentScene->Update(m_GameTimer.GetTimeElapsed());
 
 }
 
 void GameFramework::Render()
 {
+	if (g_bSceneChanged) {
+		return;
+	}
+
 	RENDER->Clear();
 	UI->Clear();
 
 	RenderBegin();
 
+	
 	{
 		// TODO: Render Logic
 		g_pCurrentScene->Render(m_pd3dDevice, m_pd3dCommandList);
 
 		RENDER->Render(m_pd3dCommandList);
+
+		if (RenderManager::g_bRenderOBBForDebug) {
+			g_pCurrentScene->RenderDebug(m_pd3dCommandList);
+		}
+
 		UI->Render(m_pd3dCommandList);
 	}
 
@@ -124,6 +145,13 @@ void GameFramework::Render()
 	tstrFrameRate = std::format(L"{}", tstrFrameRate);
 
 	::SetWindowText(g_hWnd, tstrFrameRate.data());
+}
+
+void GameFramework::ChangeScene(UINT nSceneIndex)
+{
+	assert(nSceneIndex < g_pScenes.size());
+	g_pCurrentScene = g_pScenes[nSceneIndex];
+	g_bSceneChanged = true;
 }
 
 void GameFramework::CreateFactory()
@@ -467,37 +495,6 @@ void GameFramework::ProcessInput()
 		bProcessedByScene = g_pCurrentScene->ProcessInput(pKeysBuffer);
 	}
 
-	if (!bProcessedByScene) {
-		auto pPlayer = g_pCurrentScene->GetPlayer();
-
-		DWORD dwDirection = 0;
-		if (pKeysBuffer['W'] & 0xF0)	dwDirection |= MOVE_DIR_FORWARD;
-		if (pKeysBuffer['S'] & 0xF0)	dwDirection |= MOVE_DIR_BACKWARD;
-		if (pKeysBuffer['A'] & 0xF0)	dwDirection |= MOVE_DIR_LEFT;
-		if (pKeysBuffer['D'] & 0xF0)	dwDirection |= MOVE_DIR_RIGHT;
-		if (pKeysBuffer['E'] & 0xF0)	dwDirection |= MOVE_DIR_UP;
-		if (pKeysBuffer['Q'] & 0xF0)	dwDirection |= MOVE_DIR_DOWN;
-
-		float cxDelta = 0.0f, cyDelta = 0.0f;
-		POINT ptCursorPos;
-		if (GetCapture() == g_hWnd) {
-			SetCursor(NULL);
-			GetCursorPos(&ptCursorPos);
-			cxDelta = (float)(ptCursorPos.x - m_ptOldCursorPos.x) / 3.0f;
-			cyDelta = (float)(ptCursorPos.y - m_ptOldCursorPos.y) / 3.0f;
-			SetCursorPos(m_ptOldCursorPos.x, m_ptOldCursorPos.y);
-		}
-
-		if ((dwDirection != 0) || (cxDelta != 0.0f) || (cyDelta != 0.0f)) {
-			if (cxDelta || cyDelta) {
-				if (pKeysBuffer[VK_RBUTTON] & 0xF0)
-					pPlayer->Rotate(cyDelta, 0.0f, -cxDelta);
-				else
-					pPlayer->Rotate(cyDelta, cxDelta, 0.0f);
-			}
-			if (dwDirection) pPlayer->Move(dwDirection, 1.5f, true);
-		}
-	}
 }
 
 void GameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)
@@ -506,21 +503,6 @@ void GameFramework::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM 
 		g_pCurrentScene->OnProcessingMouseMessage(hWnd, nMessageID, wParam, lParam);
 	}
 
-	switch (nMessageID) {
-	case WM_LBUTTONDOWN:
-	case WM_RBUTTONDOWN:
-		::SetCapture(hWnd);
-		::GetCursorPos(&m_ptOldCursorPos);
-		break;
-	case WM_LBUTTONUP:
-	case WM_RBUTTONUP:
-		::ReleaseCapture();
-		break;
-	case WM_MOUSEMOVE:
-		break;
-	default:
-		break;
-	}
 }
 
 void GameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)

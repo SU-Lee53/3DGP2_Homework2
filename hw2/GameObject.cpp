@@ -53,6 +53,30 @@ void GameObject::Animate(float fTimeElapsed)
 	}
 }
 
+void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
+{
+	if (m_pMesh) {
+		// Set
+		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
+
+		BoundingOrientedBox xmOBB = m_pMesh->GetOBB();
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Center, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Extents, 4);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmOBB.Orientation, 8);
+
+		// Draw
+		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		SHADER->Get<OBBDebugShader>()->OnPrepareRender(pd3dCommandList);
+
+		pd3dCommandList->DrawInstanced(1, 1, 0, 0);
+	}
+
+	for (auto& pObj : m_pChildren) {
+		pObj->RenderOBB(pd3dCommandList);
+	}
+}
+
 XMFLOAT3 GameObject::GetPosition()
 {
 	return(XMFLOAT3(m_xmf4x4World._41, m_xmf4x4World._42, m_xmf4x4World._43));
@@ -147,6 +171,10 @@ void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 {
 	m_xmf4x4World = (pxmf4x4Parent) ? Matrix4x4::Multiply(m_xmf4x4Transform, *pxmf4x4Parent) : m_xmf4x4Transform;
 
+	if (m_pMesh) {
+		m_pMesh->UpdateOBB(m_xmf4x4World);
+	}
+
 	for (auto& pChild : m_pChildren) {
 		pChild->UpdateTransform(&m_xmf4x4World);
 	}
@@ -201,21 +229,25 @@ void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<I
 
 	std::shared_ptr<Material> pMaterial;
 
-	auto setTextureFunction = [&](UINT nTextureIndex) {
+	auto setTextureFunction = [&](UINT nTextureIndex) -> bool {
 		strRead = ::ReadStringFromFile(inFile);
 		if (strRead == "null") {
-			return;
+			return false;
 		}
 
-		size_t duplicatedPos = strRead.find('@');
-		if (duplicatedPos != std::string::npos) {	// 중복임
-			strRead.erase(duplicatedPos);
+		if (strRead[0] == '@') {	// 중복임
+			strRead.erase(0, 1);
 			pMaterial->SetTexture(nTextureIndex, TEXTURE->GetTexture(strRead));
 		}
 		else {
 			std::wstring strTextureFilename = std::wstring(strRead.begin(), strRead.end()) + L".dds";
 			pMaterial->SetTexture(nTextureIndex, TEXTURE->LoadTexture(pd3dCommandList, strRead, strTextureFilename, RESOURCE_TYPE_TEXTURE2D));
 		}
+
+		// Set Standard shader
+		pMaterial->SetShader(SHADER->Get<StandardShader>());
+
+		return true;
 	};
 
 	while (true) {
@@ -261,38 +293,52 @@ void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<I
 		}
 		else if (strRead == "<AlbedoMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_ALBEDO_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_ALBEDO_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
+			}
 		}
 		else if (strRead == "<SpecularMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_SPECULAR_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_SPECULAR_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_SPECULAR_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_SPECULAR_MAP);
+			}
 		}
 		else if (strRead == "<NormalMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_NORMAL_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_NORMAL_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_NORMAL_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_NORMAL_MAP);
+			}
 		}
 		else if (strRead == "<MetallicMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_METALLIC_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_METALLIC_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_METALLIC_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_METALLIC_MAP);
+			}
 		}
 		else if (strRead == "<EmissionMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_EMISSION_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_EMISSION_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_EMISSION_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_EMISSION_MAP);
+			}
 		}
 		else if (strRead == "<DetailAlbedoMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_DETAIL_ALBEDO_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_ALBEDO_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_DETAIL_ALBEDO_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_ALBEDO_MAP);
+			}
 		}
 		else if (strRead == "<DetailNormalMap>:")
 		{
-			setTextureFunction(TEXTURE_INDEX_DETAIL_NORMAL_MAP);
-			pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_NORMAL_MAP);
+			bool bResult = setTextureFunction(TEXTURE_INDEX_DETAIL_NORMAL_MAP);
+			if (bResult) {
+				pMaterial->SetMaterialType(MATERIAL_TYPE_DETAIL_NORMAL_MAP);
+			}
 		}
 		else if (strRead == "</Materials>")
 		{

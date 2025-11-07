@@ -230,7 +230,10 @@ D3D12_INPUT_LAYOUT_DESC StandardShader::CreateInputLayout()
 
 	m_d3dInputElements = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 	};
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
@@ -300,8 +303,8 @@ D3D12_INPUT_LAYOUT_DESC TerrainShader::CreateInputLayout()
 	m_d3dInputElements = {
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
 		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TEXCOORD0", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
-		{"TEXCOORD1", 0, DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0}
 	};
 
 	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
@@ -319,4 +322,73 @@ D3D12_SHADER_BYTECODE TerrainShader::CreateVertexShader()
 D3D12_SHADER_BYTECODE TerrainShader::CreatePixelShader()
 {
 	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSTerrain", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// OBBDebugShader
+
+void OBBDebugShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
+{
+	m_pd3dPipelineStates.resize(1);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
+	{
+		d3dPipelineDesc.pRootSignature = RenderManager::g_pd3dRootSignature.Get();
+		d3dPipelineDesc.VS = CreateVertexShader();
+		d3dPipelineDesc.GS = CreateGeometryShader();
+		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
+		d3dPipelineDesc.InputLayout.NumElements = 0;
+		d3dPipelineDesc.InputLayout.pInputElementDescs = nullptr;
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	HRESULT hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[0].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+}
+
+D3D12_RASTERIZER_DESC OBBDebugShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC desc{};
+	{
+		desc.FillMode = D3D12_FILL_MODE_WIREFRAME;
+		desc.CullMode = D3D12_CULL_MODE_NONE;
+		desc.FrontCounterClockwise = FALSE;
+		desc.DepthBias = 0;
+		desc.DepthBiasClamp = 0.0f;
+		desc.SlopeScaledDepthBias = 0.0f;
+		desc.DepthClipEnable = TRUE;
+		desc.MultisampleEnable = FALSE;
+		desc.AntialiasedLineEnable = FALSE;
+		desc.ForcedSampleCount = 0;
+		desc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	}
+
+	return desc;
+}
+
+
+D3D12_SHADER_BYTECODE OBBDebugShader::CreateVertexShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSDebug", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE OBBDebugShader::CreateGeometryShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "GSDebug", "gs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE OBBDebugShader::CreatePixelShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSDebug", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }

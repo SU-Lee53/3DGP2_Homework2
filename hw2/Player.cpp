@@ -49,6 +49,7 @@ void Player::Update(float fTimeElapsed)
 	m_xmf3Velocity = Vector3::Add(m_xmf3Velocity, Vector3::ScalarProduct(m_xmf3Velocity, -fDeceleration, true));
 
 	Animate(fTimeElapsed);
+
 }
 
 void Player::Animate(float fTimeElapsed)
@@ -217,16 +218,6 @@ void Player::OnPrepareRender()
 
 AirplanePlayer::AirplanePlayer(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dGraphicsRootSignature)
 {
-	//m_pCamera = std::shared_ptr<ThirdPersonCamera>();
-
-	//std::shared_ptr<GameObject> pGameObject = GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, pd3dGraphicsRootSignature, "../Models/Apache.bin");
-	
-	//pGameObject->Rotate(15.0f, 0.0f, 0.0f);
-	//pGameObject->SetScale(8.5f, 8.5f, 8.5f);
-	//SetChild(pGameObject);
-
-	//Initialize();
-
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -236,8 +227,8 @@ AirplanePlayer::~AirplanePlayer()
 
 void AirplanePlayer::Initialize()
 {
-	m_pMainRotorFrame = FindFrame("Rotor");
-	m_pTailRotorFrame = FindFrame("Back_Rotor");
+	m_pMainRotorFrame = FindFrame("MainRotor");
+	m_pTailRotorFrame = FindFrame("TailRotor");
 
 	m_pCamera->SetPosition(Vector3::Add(m_xmf3Position, m_pCamera->GetOffset()));
 	Update(0.0f);

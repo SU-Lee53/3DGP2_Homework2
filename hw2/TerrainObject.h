@@ -1,6 +1,10 @@
 #pragma once
 #include "GameObject.h"
 
+struct CB_TERRAIN_DATA {
+	XMFLOAT4X4 xmf4x4TerrainWorld;
+	XMFLOAT2 xmf2UVTranslation = XMFLOAT2(0,0);
+};
 
 class TerrainHeightMap {
 public:
@@ -38,9 +42,13 @@ public:
 public:
 	void Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
 		const std::string & strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
+	void CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
+		int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
 
 	void UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual void Update(float fTimeElapsed) override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+
 
 public:
 	float GetHeight(float x, float z) { return (m_pHeightMapImage->GetHeight(x / m_xmf3Scale.x, z / m_xmf3Scale.z) * m_xmf3Scale.y); }
@@ -60,11 +68,16 @@ private:
 	std::shared_ptr<TerrainHeightMap>			m_pHeightMapImage = nullptr;
 	std::vector<std::shared_ptr<TerrainMesh>>	m_pTerrainMeshes = {};
 
+	std::shared_ptr<TerrainObject>				m_pChildTerrain = nullptr;
+
 	std::array<std::shared_ptr<Texture>, 3>		m_pTerrainTextures;
 
 	int m_nWidth = 0;
 	int m_nLength = 0;
 	XMFLOAT3 m_xmf3Scale;
+
+	XMFLOAT2									m_xmf2UVTranslation = XMFLOAT2(0,0);
+	ConstantBuffer								m_TerrainCBuffer;
 
 	std::array<XMFLOAT4, 4>		m_xmf4MapBoundaryPlanes = {};
 };

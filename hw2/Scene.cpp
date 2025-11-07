@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Scene.h"
+#include "TerrainObject.h"
 
 Scene::Scene()
 {
@@ -72,6 +73,9 @@ void Scene::Update(float fTimeElapsed)
 		pObj->Update(fTimeElapsed);
 	}
 
+	if (m_pTerrain) {
+		m_pTerrain->Update(fTimeElapsed);
+	}
 }
 
 void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
@@ -89,6 +93,22 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 	for (auto& pSprite : m_pSprites) {
 		pSprite->AddToUI(0);
 	}
+
+	if (m_pTerrain) {
+		RENDER->SetTerrain(m_pTerrain);
+	}
+}
+
+void Scene::RenderDebug(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
+{
+	if (m_pPlayer) {
+		m_pPlayer->RenderOBB(pd3dCommandList);
+	}
+
+	for (auto& pObj : m_pGameObjects) {
+		pObj->RenderOBB(pd3dCommandList);
+	}
+
 }
 
 void Scene::CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
@@ -102,16 +122,17 @@ void Scene::CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12
 
 void Scene::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
-	CB_LIGHT_DATA data;
-	data.nLights = m_pLights.size();
+	CB_LIGHT_DATA lightData;
+	lightData.nLights = m_pLights.size();
 
 	for (int i = 0; i < m_pLights.size(); ++i) {
-		data.LightData[i] = m_pLights[i]->MakeLightData();
+		lightData.LightData[i] = m_pLights[i]->MakeLightData();
 	}
 
-	data.globalAmbientLight = m_xmf4GlobalAmbient;
+	lightData.globalAmbientLight = m_xmf4GlobalAmbient;
 
-	m_LightCBuffer.UpdateData(&data);
+	m_LightCBuffer.UpdateData(&lightData);
+
 }
 
 bool Scene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)

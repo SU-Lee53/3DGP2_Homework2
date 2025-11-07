@@ -51,8 +51,8 @@ bool IntroScene::ProcessInput(UCHAR* pKeysBuffer)
 	if (pKeysBuffer[VK_LBUTTON] & 0xF0) {
 		auto pClickedSprite = CheckButtonClicked();
 		if (pClickedSprite == m_pSprites[2]) {
-			// TODO : Change Scele
-			__debugbreak();
+			// TODO : Change Scene
+			GameFramework::ChangeScene(1);
 		}
 
 	}
