@@ -57,6 +57,11 @@ cbuffer cbTerrainData : register(b2)
     float2 gmtxTerrainUVOffset;
 };
 
+Texture2D gtxtTerrainBillboards[7] : register(t0);
+// t0, t1 : Flower 1, 2
+
+
+
 Texture2DArray gtxtSkyboxarr : register(t0);
 
 SamplerState gssWrap : register(s0);
