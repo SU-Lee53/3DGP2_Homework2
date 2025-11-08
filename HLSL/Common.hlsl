@@ -60,12 +60,16 @@ cbuffer cbTerrainData : register(b2)
 Texture2D gtxtTerrainBillboards[7] : register(t0);
 // t0, t1 : Flower 1, 2
 
-
-
 Texture2DArray gtxtSkyboxarr : register(t0);
 
 SamplerState gssWrap : register(s0);
 SamplerState gssClamp : register(s1);
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// World Matrices
+
+StructuredBuffer<matrix> sbInstanceData : register(t8);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Per Object 
@@ -85,13 +89,13 @@ cbuffer cbGameObjectData : register(b3)
     int gnBaseIndex;
 };
 
-Texture2D gtxtAlbedoMap         : register(t1);
-Texture2D gtxtSpecularMap       : register(t2);
-Texture2D gtxtNormalMap         : register(t3);
-Texture2D gtxtMetallicMap      : register(t4);
-Texture2D gtxtEmissionMap       : register(t5);
-Texture2D gtxtDetailAlbedoMap   : register(t6);
-Texture2D gtxtDetailNormalMap   : register(t7);
+Texture2D gtxtAlbedoMap         : register(t9);
+Texture2D gtxtSpecularMap       : register(t10);
+Texture2D gtxtNormalMap         : register(t11);
+Texture2D gtxtMetallicMap       : register(t12);
+Texture2D gtxtEmissionMap       : register(t13);
+Texture2D gtxtDetailAlbedoMap   : register(t14);
+Texture2D gtxtDetailNormalMap   : register(t15);
 
 #define MATERIAL_TYPE_ALBEDO_MAP           0x01
 #define MATERIAL_TYPE_SPECULAR_MAP         0x02
@@ -108,8 +112,6 @@ Texture2D gtxtDetailNormalMap   : register(t7);
 //{
 //    matrix mtxGameObject;
 //};
-
-StructuredBuffer<matrix> sbInstanceData : register(t8);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug Data 

@@ -296,8 +296,8 @@ void TerrainMesh::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsC
 	m_nLength = nLength;
 	m_xmf3Scale = xmf3Scale;
 
-	int cxHeightMap = pHeightMap ? pHeightMap->GetHeightMapWidth() : 0;
-	int czHeightMap = pHeightMap ? pHeightMap->GetHeightMapLength() : 0;
+	int cxHeightMap = pHeightMap ? pHeightMap->GetRawImageWidth() : 0;
+	int czHeightMap = pHeightMap ? pHeightMap->GetRawImageLength() : 0;
 
 	m_xmf3Positions.resize(m_nVertices);
 	m_xmf4Colors.resize(m_nVertices);
@@ -427,9 +427,9 @@ float TerrainMesh::GetHeight(int x, int z, std::shared_ptr<HeightMapRawImage> pH
 {
 	if (!pHeightMap) return 0.f;
 
-	std::vector<BYTE>& pHeightMapPixels = pHeightMap->GetHeightMapPixels();
+	std::vector<BYTE> pHeightMapPixels = pHeightMap->GetRawImagePixels();
 	XMFLOAT3 xmf3Scale = pHeightMap->GetScale();
-	int nWidth = pHeightMap->GetHeightMapWidth();
+	int nWidth = pHeightMap->GetRawImageWidth();
 	float fHeight = pHeightMapPixels[x + (z * nWidth)] * xmf3Scale.y;
 	return fHeight;
 }

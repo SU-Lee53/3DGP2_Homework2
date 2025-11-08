@@ -4,16 +4,14 @@
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// HeightMapRawImage
+// RawFormatImage
 
-HeightMapRawImage::HeightMapRawImage(std::string_view svFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale)
+RawFormatImage::RawFormatImage(const std::string& strFileName, int nWidth, int nLength, bool bFlipY)
 {
 	m_nWidth = nWidth;
 	m_nLength = nLength;
-	m_xmf3Scale = xmf3Scale;
 
-	std::string strFilePath{ svFileName };
-	std::ifstream in{ strFilePath, std::ios::binary };
+	std::ifstream in{ strFileName, std::ios::binary };
 	if (!in)
 		__debugbreak();
 
@@ -25,13 +23,31 @@ HeightMapRawImage::HeightMapRawImage(std::string_view svFileName, int nWidth, in
 		pixelReads.push_back(b);
 	}
 
-	m_HeightMapPixels.resize(pixelReads.size());
 
-	for (int y = 0; y < m_nLength; ++y) {
-		for (int x = 0; x < m_nWidth; ++x) {
-			m_HeightMapPixels[x + ((m_nLength - 1 - y) * m_nWidth)] = pixelReads[x + (y * m_nWidth)];
+	if (bFlipY) {
+		m_pRawImagePixels.resize(pixelReads.size());
+		for (int z = 0; z < m_nLength; ++z) {
+			for (int x = 0; x < m_nWidth; ++x) {
+				m_pRawImagePixels[x + ((m_nLength - 1 - z) * m_nWidth)] = pixelReads[x + (z * m_nWidth)];
+			}
 		}
 	}
+	else {
+		m_pRawImagePixels = pixelReads;
+	}
+}
+
+RawFormatImage::~RawFormatImage(void)
+{
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// HeightMapRawImage
+
+HeightMapRawImage::HeightMapRawImage(const std::string& strFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale)
+	: RawFormatImage(strFileName, nWidth, nLength, true)
+{
+	m_xmf3Scale = xmf3Scale;
 }
 
 HeightMapRawImage::~HeightMapRawImage()
@@ -49,10 +65,10 @@ float HeightMapRawImage::GetHeight(float fx, float fz, bool bReverseQuad)
 	float fxPercent = fx - x;
 	float fzPercent = fz - z;
 
-	float fBottomLeft = (float)m_HeightMapPixels[x + (z * m_nWidth)];
-	float fBottomRight = (float)m_HeightMapPixels[(x + 1) + (z * m_nWidth)];
-	float fTopLeft = (float)m_HeightMapPixels[x + ((z + 1) * m_nWidth)];
-	float fTopRight = (float)m_HeightMapPixels[(x + 1) + ((z + 1) * m_nWidth)];
+	float fBottomLeft = (float)m_pRawImagePixels[x + (z * m_nWidth)];
+	float fBottomRight = (float)m_pRawImagePixels[(x + 1) + (z * m_nWidth)];
+	float fTopLeft = (float)m_pRawImagePixels[x + ((z + 1) * m_nWidth)];
+	float fTopRight = (float)m_pRawImagePixels[(x + 1) + ((z + 1) * m_nWidth)];
 	if (bReverseQuad)
 	{
 		if (fzPercent >= fxPercent)
@@ -84,9 +100,9 @@ XMFLOAT3 HeightMapRawImage::GetHeightMapNormal(int x, int z)
 	int xHeightMapAdd = (x < (m_nWidth - 1)) ? 1 : -1;
 	int zHeightMapAdd = (z < (m_nLength - 1)) ? m_nWidth : -m_nWidth;
 
-	float y1 = (float)m_HeightMapPixels[nHeightMapIndex] * m_xmf3Scale.y;
-	float y2 = (float)m_HeightMapPixels[nHeightMapIndex + xHeightMapAdd] * m_xmf3Scale.y;
-	float y3 = (float)m_HeightMapPixels[nHeightMapIndex + zHeightMapAdd] * m_xmf3Scale.y;
+	float y1 = (float)m_pRawImagePixels[nHeightMapIndex] * m_xmf3Scale.y;
+	float y2 = (float)m_pRawImagePixels[nHeightMapIndex + xHeightMapAdd] * m_xmf3Scale.y;
+	float y3 = (float)m_pRawImagePixels[nHeightMapIndex + zHeightMapAdd] * m_xmf3Scale.y;
 
 	XMFLOAT3 xmf3Edge1 = XMFLOAT3(0.f, y3 - y1, m_xmf3Scale.z);
 	XMFLOAT3 xmf3Edge2 = XMFLOAT3(m_xmf3Scale.x, y2 - y1, 0.f);
@@ -218,6 +234,9 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 void TerrainObject::CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color)
 {
 	// TODO : Make it happen
+
+	std::shared_ptr<HeightMapRawImage> pObjectMapRaw = make_shared<HeightMapRawImage>(strFileName, nWidth, nLength, xmf3Scale);
+
 }
 
 void TerrainObject::Update(float fTimeElapsed)
@@ -253,16 +272,12 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 			m_pMaterials[0]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
-		// Descriptor Set
-		pd3dCommandList->SetGraphicsRootDescriptorTable(3, refDescHandle.gpuHandle);
-		refDescHandle.gpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
-
 		// Textures
 		m_pMaterials[0]->CopyTextureDescriptors(pd3dDevice, refDescHandle);
 
 		// Descriptor Set
 		pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
-		refDescHandle.gpuHandle.ptr += Material::g_nTexturesPerMaterial * GameFramework::g_uiDescriptorHandleIncrementSize;
+		refDescHandle.gpuHandle.ptr += (1 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
 		// 1 (CB_MATERIAL_DATA) + Texture 7°³ 
 	}
 

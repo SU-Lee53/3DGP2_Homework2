@@ -1,37 +1,49 @@
 #pragma once
 #include "GameObject.h"
 
-struct CB_TERRAIN_DATA {
-	XMFLOAT4X4 xmf4x4TerrainWorld;
-	XMFLOAT2 xmf2UVTranslation = XMFLOAT2(0,0);
-};
-
-class HeightMapRawImage {
+class RawFormatImage
+{
 public:
-	HeightMapRawImage(std::string_view wsvFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
-	~HeightMapRawImage();
+	RawFormatImage(const std::string& strFileName, int nWidth, int nLength, bool bFlipY = false);
+	~RawFormatImage(void);
 
-	float GetHeight(float fx, float fz, bool bReverseQuad = false);
-	XMFLOAT3 GetHeightMapNormal(int x, int z);
+	BYTE GetRawImagePixel(int x, int z) { return(m_pRawImagePixels[x + (z * m_nWidth)]); }
+	void SetRawImagePixel(int x, int z, BYTE nPixel) { m_pRawImagePixels[x + (z * m_nWidth)] = nPixel; }
 
-	XMFLOAT3 GetScale() { return m_xmf3Scale; }
-	std::vector<BYTE>& GetHeightMapPixels() { return m_HeightMapPixels; }
-	int GetHeightMapWidth() { return m_nWidth; }
-	int GetHeightMapLength() { return m_nLength; }
+	const std::vector<BYTE>& GetRawImagePixels() const { return m_pRawImagePixels; }
 
-	BYTE& operator[](size_t idx) {
-		return m_HeightMapPixels[idx];
-	}
+	int GetRawImageWidth() { return m_nWidth; }
+	int GetRawImageLength() { return m_nLength; }
 
-
-private:
-	std::vector<BYTE> m_HeightMapPixels = {};
+protected:
+	std::vector<BYTE> m_pRawImagePixels = {};
 
 	int m_nWidth = 0;
 	int m_nLength = 0;
 
+};
+
+class HeightMapRawImage : public RawFormatImage {
+public:
+	HeightMapRawImage(const std::string& strFileName, int nWidth, int nLength, XMFLOAT3 xmf3Scale);
+	~HeightMapRawImage();
+
+	XMFLOAT3 GetScale() { return m_xmf3Scale; }
+	float GetHeight(float fx, float fz, bool bReverseQuad = false);
+	XMFLOAT3 GetHeightMapNormal(int x, int z);
+
+	BYTE& operator[](size_t idx) {
+		return m_pRawImagePixels[idx];
+	}
+
+private:
 	XMFLOAT3 m_xmf3Scale = {};
 
+};
+
+struct CB_TERRAIN_DATA {
+	XMFLOAT4X4 xmf4x4TerrainWorld;
+	XMFLOAT2 xmf2UVTranslation = XMFLOAT2(0, 0);
 };
 
 class TerrainObject : public GameObject {
@@ -57,8 +69,8 @@ public:
 	float GetHeight(float x, float z, bool bReverseQuad = false) { return m_pHeightMapImage->GetHeight(x, z, bReverseQuad) * m_xmf3Scale.y; } //World
 	XMFLOAT3 GetNormal(float x, float z) { return m_pHeightMapImage->GetHeightMapNormal(int(x / m_xmf3Scale.x), int(z / m_xmf3Scale.z));  }
 
-	int GetHeightMapWidth() { return m_pHeightMapImage->GetHeightMapWidth(); }
-	int GetHeightMapLength() { return m_pHeightMapImage->GetHeightMapLength(); }
+	int GetHeightMapWidth() { return m_pHeightMapImage->GetRawImageWidth(); }
+	int GetHeightMapLength() { return m_pHeightMapImage->GetRawImageLength(); }
 
 	XMFLOAT3 GetScale() { return m_xmf3Scale; }
 
@@ -83,5 +95,8 @@ private:
 	ConstantBuffer								m_TerrainCBuffer;
 
 	std::array<XMFLOAT4, 4>		m_xmf4MapBoundaryPlanes = {};
+
+	std::array<std::shared_ptr<Texture>, 7>		m_pBillboardTextures;
+
 };
 
