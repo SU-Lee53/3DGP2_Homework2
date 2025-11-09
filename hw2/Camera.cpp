@@ -148,6 +148,11 @@ bool Camera::IsInFrustum(const BoundingOrientedBox& xmBoundingBox) const
 	return m_xmFrustumWorld.Intersects(xmBoundingBox);
 }
 
+bool Camera::IsInFrustum(const XMFLOAT3& xmf3Point) const
+{
+	return m_xmFrustumWorld.Contains(XMLoadFloat3(&xmf3Point));
+}
+
 /////////////////////
 // SpaceShipCamera //
 /////////////////////

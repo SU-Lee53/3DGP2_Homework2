@@ -87,7 +87,7 @@ float HeightMapRawImage::GetHeight(float fx, float fz, bool bReverseQuad)
 	float fBottomHeight = fBottomLeft * (1 - fxPercent) + fBottomRight * fxPercent;
 	float fHeight = fBottomHeight * (1 - fzPercent) + fTopHeight * fzPercent;
 
-	return(fHeight);
+	return fHeight;
 }
 
 XMFLOAT3 HeightMapRawImage::GetHeightMapNormal(int x, int z)
@@ -176,13 +176,11 @@ void TerrainObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 
 	m_TerrainCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
 
-	// 11.06
-	// TODO : 여기부터
-	// 자식 오브젝트 하나 생성
-	// 물 그릴 Grid Mesh 하나와 물 텍스쳐를 준비
 	CreateChildWaterGridObject(pd3dDevice, pd3dCommandList, nWidth, nLength, nBlockWidth, nBlockLength, xmf3Scale, xmf4Color);
-
 	m_pChildTerrain = static_pointer_cast<TerrainObject>(m_pChildren[0]);
+
+	// Billboard 생성
+	CreateBillboards(pd3dDevice, pd3dCommandList, "../Models/Textures/Terrain/ObjectsMap.raw");
 
 	UpdateTransform();
 }
@@ -226,17 +224,42 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 	pWaterGridObject->SetName("WaterGridFrame");
 	pWaterGridObject->m_TerrainCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
 
-	XMStoreFloat4x4(&pWaterGridObject->m_xmf4x4Transform, XMMatrixTranslation(0.f, 250.f, 0.f));
+	XMStoreFloat4x4(&pWaterGridObject->m_xmf4x4Transform, XMMatrixTranslation(0.f, m_fWaterHeight, 0.f));
 
 	SetChild(pWaterGridObject);
 }
 
-void TerrainObject::CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color)
+void TerrainObject::CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName)
 {
-	// TODO : Make it happen
+	m_BillboardCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_BILLBOARD_DATA>::value, true);
+	std::shared_ptr<RawFormatImage> pObjectMapRaw = make_shared<RawFormatImage>(strFileName, m_nWidth, m_nLength, true);
 
-	std::shared_ptr<HeightMapRawImage> pObjectMapRaw = make_shared<HeightMapRawImage>(strFileName, nWidth, nLength, xmf3Scale);
+	// 맵 전체에 100개를 뿌린다
+	// 다만 물보다는 높게 있어야 함
 
+	for (int i = 0; i < MAX_BILLBOARD_COUNT; ++i) {
+		BillboardParameters billboardParams;
+		float fPosX = 0.f;
+		float fPosZ = 0.f;
+		float fHeight = 0.f;
+		while (true) {
+			fPosX = (rand() % m_nWidth * m_xmf3Scale.x) - 1;
+			fPosZ = (rand() % m_nLength * m_xmf3Scale.z) - 1;
+			fHeight = GetHeight(fPosX, fPosZ);
+			if (fHeight > m_fWaterHeight) break;
+		}
+
+		float nTextureIndex = rand() % 3;
+		float fOffset = (nTextureIndex == 2) ? 40.f : 33.f;
+		billboardParams.xmf3Position = XMFLOAT3(fPosX, fHeight + fOffset, fPosZ);
+		billboardParams.xmf2Size = XMFLOAT2(20.f, fOffset * 2.f);
+		billboardParams.nTextureIndex = nTextureIndex;
+		m_Billboards.push_back(billboardParams);
+	}
+
+	m_pBillboardTextures[0] = TEXTURE->LoadTexture(pd3dCommandList, "Tree01", L"Terrain/Billboards/Tree01.dds", RESOURCE_TYPE_TEXTURE2D);
+	m_pBillboardTextures[1] = TEXTURE->LoadTexture(pd3dCommandList, "Tree02", L"Terrain/Billboards/Tree02.dds", RESOURCE_TYPE_TEXTURE2D);
+	m_pBillboardTextures[2] = TEXTURE->LoadTexture(pd3dCommandList, "Tree03", L"Terrain/Billboards/Tree03.dds", RESOURCE_TYPE_TEXTURE2D);
 }
 
 void TerrainObject::Update(float fTimeElapsed)
@@ -247,8 +270,14 @@ void TerrainObject::Update(float fTimeElapsed)
 
 void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
 {
+	if (m_pMaterials[0]->GetShader()) {
+		m_pMaterials[0]->GetShader()->OnPrepareRender(pd3dCommandList, 0);
+	}
+
+	UINT nBillboardsToDraw = 0;
 	if ((m_pMaterials.size() == 1) && (m_pMaterials[0]))
 	{
+		// Terrain Data
 		CB_TERRAIN_DATA terrainData;
 		{
 			XMStoreFloat4x4(&terrainData.xmf4x4TerrainWorld, XMMatrixTranspose(XMLoadFloat4x4(&m_xmf4x4World)));
@@ -256,15 +285,30 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 		}
 		m_TerrainCBuffer.UpdateData(&terrainData);
 
-		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
-			m_TerrainCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_TerrainCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
 
-		pd3dCommandList->SetGraphicsRootDescriptorTable(1, refDescHandle.gpuHandle);
-		refDescHandle.gpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// Billboard Data & Texture
+		nBillboardsToDraw = UpdateBillboardData();
+		if (nBillboardsToDraw != 0) {
+			pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_BillboardCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
 
+			// Billboard Textures
+			for (int i = 0; i < m_pBillboardTextures.size(); ++i) {
+				pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_pBillboardTextures[i]->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+			}
+		}
+		else {
+			// 그릴것이 없어도 Offset 은 일단 옮긴다
+			refDescHandle.cpuHandle.ptr += (1 + m_pBillboardTextures.size()) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		}
 
-		if (m_pMaterials[0]->GetShader()) m_pMaterials[0]->GetShader()->OnPrepareRender(pd3dCommandList);
+		// Data set
+		pd3dCommandList->SetGraphicsRootDescriptorTable(2, refDescHandle.gpuHandle);
+		refDescHandle.gpuHandle.ptr += (2 + 3) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// Terrain Data + BillboardData + Billboard 3개
 
 		// Color + nType
 		m_pMaterials[0]->UpdateShaderVariable(pd3dCommandList, 1);
@@ -289,8 +333,41 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 		}
 	}
 
+	// Draw Billboard
+	if (m_pMaterials[0]->GetShader()) {
+		m_pMaterials[0]->GetShader()->OnPrepareRender(pd3dCommandList, 1);
+	}
+
+	if (nBillboardsToDraw != 0) {
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		pd3dCommandList->DrawInstanced(nBillboardsToDraw, 1, 0, 0);
+	}
+
 	for (auto& pChild : m_pChildren) {
 		static_pointer_cast<TerrainObject>(pChild)->Render(pd3dDevice, pd3dCommandList, refDescHandle);
 	}
 
+}
+
+UINT TerrainObject::UpdateBillboardData()
+{
+	// 절두체 컬링 수행
+	auto pCamera = CUR_SCENE->GetCamera();
+
+	std::vector<BillboardParameters> billboardsInCamera;
+
+	for (int i = 0; i < m_Billboards.size(); ++i) {
+		if (pCamera->IsInFrustum(m_Billboards[i].xmf3Position)) {
+			billboardsInCamera.push_back(m_Billboards[i]);
+		}
+		//billboardsInCamera.push_back(m_Billboards[i]);
+	}
+
+	if (billboardsInCamera.size() != 0) {
+		CB_BILLBOARD_DATA billboardData;
+		memcpy(billboardData.billboardData, billboardsInCamera.data(), billboardsInCamera.size() * sizeof(BillboardParameters));
+		m_BillboardCBuffer.UpdateData(&billboardData);
+	}
+
+	return billboardsInCamera.size();
 }

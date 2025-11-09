@@ -87,6 +87,8 @@ void Player::Move(const XMFLOAT3& xmf3Shift, bool bUpdateVelocity)
 		m_xmf3Position = Vector3::Add(m_xmf3Position, xmf3Shift);
 		m_pCamera->Move(xmf3Shift);
 	}
+
+	UpdateTransform(nullptr);
 }
 
 void Player::Move(float fxOffset, float fyOffset, float fzOffset)
@@ -227,10 +229,19 @@ void Player::AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerra
 	if (xmf3PlayerPosition.y < fHeight)
 	{
 		XMFLOAT3 xmf3PlayerVelocity = GetVelocity();
+		float fDamage = XMVectorGetX(XMVector3LengthEst(XMLoadFloat3(&xmf3PlayerVelocity)));
+		if (fDamage > 130.f) {
+			m_fHP -= (fDamage * 0.05f);
+			if (m_fHP < 0.f) {
+				m_fHP = 0.f;
+			}
+		}
+
 		xmf3PlayerVelocity.y = 0.0f;
 		SetVelocity(xmf3PlayerVelocity);
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
+
 	}
 }
 
@@ -320,4 +331,34 @@ std::shared_ptr<Camera> AirplanePlayer::ChangeCamera(UINT nNewCameraMode, float 
 	Update(fTimeElapsed);
 
 	return(m_pCamera);
+}
+
+void AirplanePlayer::OnBeginCollision(std::shared_ptr<GameObject> pOther)
+{
+	XMFLOAT3 xmf3PlayerVelocity = GetVelocity();
+	float fDamage = XMVectorGetX(XMVector3LengthEst(XMLoadFloat3(&xmf3PlayerVelocity)));
+	if (fDamage > 100.f) {
+		m_fHP -= (fDamage * 0.05f);
+		if (m_fHP < 0.f) {
+			m_fHP = 0.f;
+		}
+	}
+
+	xmf3PlayerVelocity.x = -1.f * xmf3PlayerVelocity.x;
+	xmf3PlayerVelocity.y = -1.f * xmf3PlayerVelocity.y;
+	xmf3PlayerVelocity.z = -1.f * xmf3PlayerVelocity.z;
+	SetVelocity(xmf3PlayerVelocity);
+}
+
+void AirplanePlayer::OnInCollision(std::shared_ptr<GameObject> pOther)
+{
+	XMFLOAT3 xmf3PlayerVelocity = GetVelocity();
+	xmf3PlayerVelocity.x = -1.f * xmf3PlayerVelocity.x;
+	xmf3PlayerVelocity.y = -1.f * xmf3PlayerVelocity.y;
+	xmf3PlayerVelocity.z = -1.f * xmf3PlayerVelocity.z;
+	SetVelocity(xmf3PlayerVelocity);
+}
+
+void AirplanePlayer::OnEndCollision(std::shared_ptr<GameObject> pOther)
+{
 }

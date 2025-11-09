@@ -14,6 +14,9 @@
 #include <memory.h>
 #include <tchar.h>
 
+#undef min
+#undef max
+
 
 // STL
 #include <iostream>
@@ -23,6 +26,7 @@
 #include <fstream>
 #include <memory>
 #include <concepts>
+#include <unordered_set>
 #include <unordered_map>
 #include <map>
 #include <list>
@@ -73,6 +77,7 @@ using namespace DirectX;
 #include "ConstantBuffer.h"
 #include "StructuredBuffer.h"
 #include "GameFramework.h"
+#include "RandomGenerator.h"
 
 #define INSTANCING_USING_DESCRIPTOR_TABLE
 

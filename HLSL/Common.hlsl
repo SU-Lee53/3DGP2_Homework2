@@ -51,16 +51,30 @@ cbuffer cbLightData : register(b1)
     int gnLights;
 };
 
+Texture2DArray gtxtSkyboxarr : register(t0);
+
 cbuffer cbTerrainData : register(b2)
 {
     matrix gmtxTerrainWorld;
     float2 gmtxTerrainUVOffset;
 };
 
-Texture2D gtxtTerrainBillboards[7] : register(t0);
-// t0, t1 : Flower 1, 2
+struct BILLBOARD
+{
+    float3 vPosition;
+    uint nTextureIndex;
+    float2 vSize;
+};
 
-Texture2DArray gtxtSkyboxarr : register(t0);
+#define MAX_BILLBOARD_COUNT 500
+
+cbuffer cbBillboardInTerrainData : register(b3)
+{
+    BILLBOARD gBillboard[MAX_BILLBOARD_COUNT];
+}
+
+Texture2D gtxtTerrainBillboards[3] : register(t1);
+// t1, t2, t3 : Tree01, Tree02, Tree03
 
 SamplerState gssWrap : register(s0);
 SamplerState gssClamp : register(s1);
@@ -69,7 +83,7 @@ SamplerState gssClamp : register(s1);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // World Matrices
 
-StructuredBuffer<matrix> sbInstanceData : register(t8);
+StructuredBuffer<matrix> sbInstanceData : register(t4);
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Per Object 
@@ -83,19 +97,19 @@ struct MATERIAL
     uint m_textureMask;
 };
 
-cbuffer cbGameObjectData : register(b3)
+cbuffer cbGameObjectData : register(b4)
 {
     MATERIAL gMaterial;
     int gnBaseIndex;
 };
 
-Texture2D gtxtAlbedoMap         : register(t9);
-Texture2D gtxtSpecularMap       : register(t10);
-Texture2D gtxtNormalMap         : register(t11);
-Texture2D gtxtMetallicMap       : register(t12);
-Texture2D gtxtEmissionMap       : register(t13);
-Texture2D gtxtDetailAlbedoMap   : register(t14);
-Texture2D gtxtDetailNormalMap   : register(t15);
+Texture2D gtxtAlbedoMap         : register(t5);
+Texture2D gtxtSpecularMap       : register(t6);
+Texture2D gtxtNormalMap         : register(t7);
+Texture2D gtxtMetallicMap       : register(t8);
+Texture2D gtxtEmissionMap       : register(t9);
+Texture2D gtxtDetailAlbedoMap   : register(t10);
+Texture2D gtxtDetailNormalMap   : register(t11);
 
 #define MATERIAL_TYPE_ALBEDO_MAP           0x01
 #define MATERIAL_TYPE_SPECULAR_MAP         0x02
@@ -116,7 +130,7 @@ Texture2D gtxtDetailNormalMap   : register(t15);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug Data 
 
-cbuffer cbOBBDebugData : register(b4)
+cbuffer cbOBBDebugData : register(b5)
 {
     float3 gvOBBCenter;
     float3 gvOBBExtent;

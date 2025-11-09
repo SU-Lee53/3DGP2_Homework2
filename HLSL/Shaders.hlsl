@@ -137,33 +137,78 @@ float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET0
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// OBBDebugShader
+// BillboardShader
 
 struct VS_BILLBOARD_OUTPUT
 {
-    float4 position : POSITION;
+    uint nVertexID : VERTEXID;
 };
 
 struct GS_BILLBOARD_OUTPUT
 {
     float4 position : SV_Position;
+    float2 uv : TEXCOORD;
+    uint textureIndex : TEXTUREINDEX;
 };
 
 VS_BILLBOARD_OUTPUT VSBillboard(uint nVertexID : SV_VertexID)
 {
     VS_BILLBOARD_OUTPUT output;
-    output.position = float4(0.f, 0.f, 0.f, 1.f);
+    output.nVertexID = nVertexID;
     return output;
 }
 
-[maxvertexcount(24)]
+[maxvertexcount(4)]
 void GSBillboard(point VS_BILLBOARD_OUTPUT input[1], inout TriangleStream<GS_BILLBOARD_OUTPUT> outStream)
 {
+    float3 vUp = float3(0.f, 1.f, 0.f);
+    float3 vLook = gvCameraPosition.xyz - gBillboard[input[0].nVertexID].vPosition;
+    vLook = normalize(vLook);
+    float3 vRight = cross(vUp, vLook);
+    
+    float fHalfWidth = gBillboard[input[0].nVertexID].vSize.x * 0.5f;
+    float fHalfHeight = gBillboard[input[0].nVertexID].vSize.y * 0.5f;
+    
+    float4 vertices[4];
+    vertices[0] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[1] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[2] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[3] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    
+    float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    
+    matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
+    
+    GS_BILLBOARD_OUTPUT output;
+    
+    output.position = mul(vertices[0], mtxViewProjection);
+    output.uv = uvs[0];
+    output.textureIndex = gBillboard[input[0].nVertexID].nTextureIndex;
+    outStream.Append(output);
+    
+    output.position = mul(vertices[1], mtxViewProjection);
+    output.uv = uvs[1];
+    output.textureIndex = gBillboard[input[0].nVertexID].nTextureIndex;
+    outStream.Append(output);
+    
+    output.position = mul(vertices[2], mtxViewProjection);
+    output.uv = uvs[2];
+    output.textureIndex = gBillboard[input[0].nVertexID].nTextureIndex;
+    outStream.Append(output);
+    
+    output.position = mul(vertices[3], mtxViewProjection);
+    output.uv = uvs[3];
+    output.textureIndex = gBillboard[input[0].nVertexID].nTextureIndex;
+    outStream.Append(output);
 }
 
 float4 PSBillboard(GS_BILLBOARD_OUTPUT input) : SV_Target0
 {
-    return float4(1.f, 0.f, 0.f, 0.f);
+    float4 cColor = gtxtTerrainBillboards[input.textureIndex].Sample(gssWrap, input.uv);
+    if (cColor.a <= 0.3f)
+        discard; //clip(cColor.a - 0.3f);
+    
+    return cColor;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

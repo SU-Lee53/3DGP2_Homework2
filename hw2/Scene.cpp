@@ -12,38 +12,6 @@ void Scene::BuildDefaultLightsAndMaterials()
 
 void Scene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
-	CreateRootSignature(pd3dDevice);
-	Material::PrepareShaders(pd3dDevice, m_pd3dRootSignature);
-	BuildDefaultLightsAndMaterials();
-
-
-	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/SuperCobra.bin");
-
-	std::shared_ptr<AirplanePlayer> pAirplanePlayer = std::make_shared<AirplanePlayer>(pd3dDevice, pd3dCommandList, m_pd3dRootSignature);
-	std::shared_ptr<ThirdPersonCamera> pCamera = std::make_shared<ThirdPersonCamera>();
-
-	pCamera->CreateShaderVariables(pd3dDevice, pd3dCommandList);
-	pCamera->SetTimeLag(0.25f);
-	pCamera->SetOffset(XMFLOAT3(0.0f, 105.0f, -140.0f));
-	pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
-	pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
-	pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
-	pCamera->SetPlayer(pAirplanePlayer);
-	pAirplanePlayer->SetCamera(pCamera);
-
-	m_pPlayer = pAirplanePlayer;
-	m_pPlayer->Initialize();
-
-	std::shared_ptr<TexturedSprite> pTextureSprite = std::make_shared<TexturedSprite>("intro", 0.f, 0.f, 1.0f, 1.0f);
-	std::shared_ptr<TextSprite> pTextSprite1 = std::make_shared<TextSprite>("abcABC123:", 0.f, 0.2f, 0.5f, 0.5f, XMFLOAT4(1, 1, 1, 1), 1, true);
-	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("3D Game Programming", 0.0f, 0.5f, 1.f, 0.8f, XMFLOAT4(1,0,0,1), 1, true);
-
-	m_pSprites.push_back(pTextureSprite);
-	m_pSprites.push_back(pTextSprite1);
-	m_pSprites.push_back(pTextSprite2);
-
-
-	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
 void Scene::ReleaseUploadBuffers()
@@ -82,12 +50,19 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 {
 	if (m_pPlayer) {
 		m_pPlayer->UpdateTransform();
-		m_pPlayer->AddToRenderMap();
+		m_pPlayer->OnPrepareRender();
+		if (m_pPlayer->IsInFrustum(GetCamera())) {
+			m_pPlayer->AddToRenderMap();
+		}
 	}
 
 	for (auto& pObj : m_pGameObjects) {
 		pObj->UpdateTransform();
+		pObj->OnPrepareRender();
 		pObj->AddToRenderMap();
+		//if (pObj->IsInFrustum(GetCamera())) {
+		//	pObj->AddToRenderMap();
+		//}
 	}
 
 	for (auto& pSprite : m_pSprites) {
@@ -186,6 +161,40 @@ std::shared_ptr<Sprite> Scene::CheckButtonClicked()
 	}
 
 	return pReturn;
+}
+
+void Scene::CheckCollision()
+{
+	// 일단 Player 와 오브젝트간의 충돌만 검사
+	// 오브젝트는 움직이게 하지 않을것이기 때문
+	// 계층의 OBB 와 일일히 검사하지 않고, Root 의 m_xmOBBInWorld 와만 충돌을 체크
+
+	BoundingOrientedBox xmPlayerOBB = m_pPlayer->GetOBB();
+	for (auto& pObj : m_pGameObjects) {
+		BoundingOrientedBox xmObjectOBB = pObj->GetOBB();
+		
+		if (xmPlayerOBB.Intersects(xmObjectOBB)) {
+			bool bAlreadyCollided = m_pPlayer->CheckCollisionSet(pObj);
+			if (!bAlreadyCollided) {
+				// OnBeginCollision
+				m_pPlayer->OnBeginCollision(pObj);
+				m_pPlayer->AddToCollisionSet(pObj);
+			}
+			else {
+				// OnInCollision
+				m_pPlayer->OnInCollision(pObj);
+			}
+		}
+		else {
+			bool bAlreadyCollided = m_pPlayer->CheckCollisionSet(pObj);
+			if (bAlreadyCollided) {
+				// OnEndCollision
+				m_pPlayer->OnEndCollision(pObj);
+				m_pPlayer->EraseFromCollisionSet(pObj);
+			}
+		}
+
+	}
 }
 
 std::shared_ptr<Camera> Scene::GetCamera() const

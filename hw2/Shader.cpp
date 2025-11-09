@@ -258,7 +258,7 @@ D3D12_SHADER_BYTECODE StandardShader::CreatePixelShader()
 
 void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
 {
-	m_pd3dPipelineStates.resize(1);
+	m_pd3dPipelineStates.resize(2);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
@@ -279,6 +279,29 @@ void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSig
 	}
 
 	HRESULT hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[0].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+
+	{
+		d3dPipelineDesc.VS = CreateBillboardVertexShader();
+		d3dPipelineDesc.GS = CreateBillboardGeometryShader();
+		d3dPipelineDesc.PS = CreateBillboardPixelShader();
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
+		d3dPipelineDesc.InputLayout.NumElements = 0;
+		d3dPipelineDesc.InputLayout.pInputElementDescs = nullptr;
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[1].GetAddressOf()));
 	if (FAILED(hr)) {
 		__debugbreak();
 	}
@@ -322,6 +345,21 @@ D3D12_SHADER_BYTECODE TerrainShader::CreateVertexShader()
 D3D12_SHADER_BYTECODE TerrainShader::CreatePixelShader()
 {
 	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSTerrain", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE TerrainShader::CreateBillboardVertexShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSBillboard", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE TerrainShader::CreateBillboardGeometryShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "GSBillboard", "gs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE TerrainShader::CreateBillboardPixelShader()
+{
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSBillboard", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

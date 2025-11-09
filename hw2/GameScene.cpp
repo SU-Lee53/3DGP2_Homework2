@@ -75,6 +75,8 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	BuildDefaultLightsAndMaterials();
 
 	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/SuperCobra.bin");
+	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Tower.bin");
+	GameObject::LoadGeometryFromFile(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, "../Models/Tank.bin");
 
 	std::shared_ptr<AirplanePlayer> pAirplanePlayer = std::make_shared<AirplanePlayer>(pd3dDevice, pd3dCommandList, m_pd3dRootSignature);
 	std::shared_ptr<ThirdPersonCamera> pCamera = std::make_shared<ThirdPersonCamera>();
@@ -106,6 +108,75 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	m_pTerrain = std::make_shared<TerrainObject>();
 	m_pTerrain->Initialize(pd3dDevice, pd3dCommandList, "../Models/Textures/Terrain/HeightMap.raw", 257, 257, 257, 257, xmf3Scale, xmf4Color);
 
+
+	// 오브젝트 배치
+	{
+		float fTerrainWidth = m_pTerrain->GetWidth();
+		float fTerrainLength = m_pTerrain->GetLength();
+
+		// Tower
+		{
+			auto pTower = RESOURCE->CopyGameObject("Tower");
+			pTower->SetScale(20, 20, 20);
+			std::shared_ptr<GameObject> pTowerObject = std::make_shared<GameObject>();
+			pTowerObject->SetChild(pTower);
+			//pTowerObject->Initialize();
+			pTowerObject->UpdateTransform(nullptr);
+			pTowerObject->GenerateBigBoundingBox(true, true);
+
+			for (int i = 0; i < 10; i++) {
+				auto pCopied = GameObject::CopyObject(*pTowerObject);
+
+				float fPosX = 0.f;
+				float fPosZ = 0.f;
+				while (true) {
+					fPosX = RandomGenerator::GenerateRandomFloatInRange(1.f, fTerrainWidth) - 1;
+					fPosZ = RandomGenerator::GenerateRandomFloatInRange(1.f, fTerrainLength) - 1;
+					float fHeight = m_pTerrain->GetHeight(fPosX, fPosZ);
+					if (fHeight > m_pTerrain->GetWaterHeight()) break;
+				}
+
+				pCopied->SetPosition(XMFLOAT3(fPosX, 0.f, fPosZ));
+				m_pGameObjects.push_back(pCopied);
+			}
+		}
+
+		// Tank
+		{
+			auto pTank = RESOURCE->CopyGameObject("Tank");
+			pTank->SetScale(50, 50, 50);
+			std::shared_ptr<GameObject> pTankObject = std::make_shared<GameObject>();
+			pTankObject->SetChild(pTank);
+			//pTankObject->Initialize();
+			pTankObject->UpdateTransform(nullptr);
+			pTankObject->GenerateBigBoundingBox();
+
+			XMFLOAT3 xmf3RotationAxis = XMFLOAT3(0.f, 1.f, 0.f);
+
+			for (int i = 0; i < 10; i++) {
+				auto pCopied = GameObject::CopyObject(*pTankObject);
+
+				float fPosX = 0.f;
+				float fPosZ = 0.f;
+				float fRotationY = 0.f;
+				while (true) {
+					fPosX = RandomGenerator::GenerateRandomFloatInRange(1.f, fTerrainWidth) - 1;
+					fPosZ = RandomGenerator::GenerateRandomFloatInRange(1.f, fTerrainLength) - 1;
+					float fHeight = m_pTerrain->GetHeight(fPosX, fPosZ);
+					if (fHeight > m_pTerrain->GetWaterHeight()) break;
+				}
+
+				pCopied->SetPosition(XMFLOAT3(fPosX, 0.f, fPosZ));
+				pCopied->Rotate(&xmf3RotationAxis, RandomGenerator::GenerateRandomFloatInRange(0.f, 360.f));
+
+				m_pGameObjects.push_back(pCopied);
+			}
+		}
+	}
+
+	m_pHPTextSprite = std::make_shared<TextSprite>("", 0.0f, 0.0f, 0.3f, 0.05f, XMFLOAT4(1, 0, 0, 1), 1, true);
+	m_pSprites.push_back(m_pHPTextSprite);
+
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
 
@@ -116,6 +187,8 @@ void GameScene::ReleaseUploadBuffers()
 
 bool GameScene::ProcessInput(UCHAR* pKeysBuffer)
 {
+	m_pPlayer->CacheLastFrameTransform();
+
 	DWORD dwDirection = 0;
 	if (pKeysBuffer['W'] & 0xF0)	dwDirection |= MOVE_DIR_FORWARD;
 	if (pKeysBuffer['S'] & 0xF0)	dwDirection |= MOVE_DIR_BACKWARD;
@@ -145,8 +218,6 @@ bool GameScene::ProcessInput(UCHAR* pKeysBuffer)
 			m_pPlayer->Move(dwDirection, 1.5f, true);
 		}
 	}
-
-
 	return true;
 }
 
@@ -165,6 +236,13 @@ void GameScene::Update(float fTimeElapsed)
 		pObj->AdjustHeightFromTerrain(m_pTerrain);
 	}
 
+	XMFLOAT3 xmf3RotationAxis = XMFLOAT3(0.f, 0.f, 1.f);
+	//m_pGameObjects[0]->Rotate(&xmf3RotationAxis, 50.f * fTimeElapsed);
+
+	m_pHPTextSprite->SetText(std::format("HP:{}", (int)m_pPlayer->GetHP()));
+
+
+	Scene::CheckCollision();
 	Scene::Update(fTimeElapsed);
 }
 

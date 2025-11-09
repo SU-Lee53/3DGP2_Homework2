@@ -44,6 +44,8 @@ public:
 
 	virtual void AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerrain) override;
 
+	float GetHP() const { return m_fHP; }
+
 protected:
 	XMFLOAT3					m_xmf3Position;
 	XMFLOAT3					m_xmf3Right;
@@ -60,6 +62,7 @@ protected:
 	float           			m_fMaxVelocityY;
 	float           			m_fFriction;
 
+	float						m_fHP = 100.f;
 
 	std::shared_ptr<Camera>		m_pCamera = nullptr;
 
@@ -70,15 +73,23 @@ public:
 	AirplanePlayer(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dGraphicsRootSignature);
 	virtual ~AirplanePlayer();
 
-	std::shared_ptr<GameObject> m_pMainRotorFrame = nullptr;
-	std::shared_ptr<GameObject> m_pTailRotorFrame = nullptr;
 
 private:
 	virtual void Initialize() override;
 	virtual void Animate(float fTimeElapsed) override;
 
-
 public:
 	virtual std::shared_ptr<Camera> ChangeCamera(UINT nNewCameraMode, float fTimeElapsed) override;
+
+public:
+	// Collision
+	virtual void OnBeginCollision(std::shared_ptr<GameObject> pOther);
+	virtual void OnInCollision(std::shared_ptr<GameObject> pOther);
+	virtual void OnEndCollision(std::shared_ptr<GameObject> pOther);
+
+private:
+	std::shared_ptr<GameObject> m_pMainRotorFrame = nullptr;
+	std::shared_ptr<GameObject> m_pTailRotorFrame = nullptr;
+
 };
 

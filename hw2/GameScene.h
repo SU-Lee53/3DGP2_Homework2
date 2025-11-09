@@ -24,6 +24,7 @@ public:
 	virtual bool OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam) override;
 
 private:
-	POINT					m_ptOldCursorPos;
+	POINT							m_ptOldCursorPos;
+	std::shared_ptr<TextSprite>		m_pHPTextSprite;
 };
 

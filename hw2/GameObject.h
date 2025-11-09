@@ -22,9 +22,12 @@ struct CB_OBB_DEBUG_DATA {
 	XMFLOAT4 gvOBBOrientationQuat;
 };
 
+class Camera;
+
 class GameObject : public std::enable_shared_from_this<GameObject> {
 public:
 	GameObject();
+
 public:
 	void SetMesh(std::shared_ptr<Mesh> pMesh);
 	void SetShader(std::shared_ptr<Shader> pShader);
@@ -34,7 +37,7 @@ public:
 	void SetChild(std::shared_ptr<GameObject> pChild);
 
 public:
-	virtual void Initialize() {}
+	virtual void Initialize();
 	virtual void Update(float fTimeElapsed);
 	virtual void Animate(float fTimeElapsed);
 
@@ -59,14 +62,19 @@ public:
 	void Rotate(XMFLOAT3* pxmf3Axis, float fAngle);
 	void Rotate(XMFLOAT4* pxmf4Quaternion);
 
+	void CacheLastFrameTransform();
+
 	std::shared_ptr<GameObject> GetParent() { return m_pParent; }
 	void UpdateTransform(XMFLOAT4X4* pxmf4x4Parent = NULL);
 	std::shared_ptr<GameObject> FindFrame(const std::string& strFrameName);
 
-	UINT GetMeshType() { return((m_pMesh) ? m_pMesh->GetType() : 0); }
+	UINT GetMeshType() { return (m_pMesh) ? m_pMesh->GetType() : 0; }
+
+	bool IsInFrustum(std::shared_ptr<Camera> pCamera);
+	BoundingOrientedBox GetOBB() const { return m_xmOBBInWorld; };
 
 public:
-	void GenerateBigBoundingBox();
+	void GenerateBigBoundingBox(bool bFlipYZ = false, bool bCenterOnFloor = false);
 
 private:
 	void UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fMinY, float& fMaxY, float& fMinZ, float& fMaxZ);
@@ -86,11 +94,23 @@ public:
 	void ReleaseUploadBuffers();
 
 public:
+	virtual void OnBeginCollision(std::shared_ptr<GameObject> pOther) {}
+	virtual void OnInCollision(std::shared_ptr<GameObject> pOther) {}
+	virtual void OnEndCollision(std::shared_ptr<GameObject> pOther) {}
+
+	std::unordered_set<std::shared_ptr<GameObject>>& GetCollisionSet() { return m_pCollisionSet; }
+	void AddToCollisionSet(std::shared_ptr<GameObject> pOther) { m_pCollisionSet.insert(pOther); }
+	void EraseFromCollisionSet(std::shared_ptr<GameObject> pOther) { m_pCollisionSet.erase(m_pCollisionSet.find(pOther)); }
+	bool CheckCollisionSet(std::shared_ptr<GameObject> pOther);
+
+
+public:
 	std::string m_strFrameName;
 
 	std::shared_ptr<Mesh> m_pMesh;
 	std::vector<std::shared_ptr<Material>> m_pMaterials;
 
+	XMFLOAT4X4 m_xmf4x4CachedLastFrameTransform;
 	XMFLOAT4X4 m_xmf4x4Transform;
 	XMFLOAT4X4 m_xmf4x4World;
 
@@ -100,6 +120,9 @@ public:
 	BoundingOrientedBox m_xmOBB;
 	BoundingOrientedBox m_xmOBBInWorld;
 	float m_fHalfHeight = 0.f;	// Terrain 충돌 확인용 fHalfHeight
+
+	// Collision
+	std::unordered_set<std::shared_ptr<GameObject>> m_pCollisionSet = {};
 
 public:
 	void LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);

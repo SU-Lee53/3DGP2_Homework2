@@ -37,7 +37,9 @@ public:
 
 	virtual void SetViewportsAndScissorRects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
+	const BoundingFrustum& GetFrustum() const { return m_xmFrustumWorld; }
 	bool IsInFrustum(const BoundingOrientedBox& xmBoundingBox) const;
+	bool IsInFrustum(const XMFLOAT3& xmf3Point) const;
 
 	void SetPlayer(std::shared_ptr<Player> pPlayer) { m_pPlayer = pPlayer; }
 	std::shared_ptr<Player> GetPlayer() const { return m_pPlayer; }

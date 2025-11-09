@@ -46,6 +46,9 @@ public:
 	const std::shared_ptr<TerrainObject>& GetTerrain() { return m_pTerrain; }
 
 public:
+	void CheckCollision();
+
+public:
 	std::shared_ptr<Camera> GetCamera() const;
 	const ConstantBuffer& GetCBuffer() const { return m_LightCBuffer; }
 	std::shared_ptr<Player> GetPlayer() const;

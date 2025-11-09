@@ -46,6 +46,19 @@ struct CB_TERRAIN_DATA {
 	XMFLOAT2 xmf2UVTranslation = XMFLOAT2(0, 0);
 };
 
+struct BillboardParameters {
+	XMFLOAT3 xmf3Position;
+	UINT nTextureIndex;
+	XMFLOAT2 xmf2Size;
+	XMUINT2 pad = XMUINT2(0,0);
+};
+
+#define MAX_BILLBOARD_COUNT 500
+
+struct CB_BILLBOARD_DATA {
+	BillboardParameters billboardData[MAX_BILLBOARD_COUNT];
+};
+
 class TerrainObject : public GameObject {
 public:
 	TerrainObject();
@@ -57,12 +70,12 @@ public:
 	void CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
 		int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
 
-	void CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList,
-		const std::string& strFileName, int nWidth, int nLength, int nBlockWidth, int nBlockLength, XMFLOAT3 xmf3Scale, XMFLOAT4 xmf4Color);
+	void CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName);
 
 	void UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void Update(float fTimeElapsed) override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	UINT UpdateBillboardData();
 
 
 public:
@@ -76,6 +89,7 @@ public:
 
 	float GetWidth() { return m_nWidth * m_xmf3Scale.x; }
 	float GetLength() { return m_nLength * m_xmf3Scale.z; }
+	float GetWaterHeight() { return m_fWaterHeight; }
 
 	std::array<XMFLOAT4, 4>& GetWallPlanes() { return m_xmf4MapBoundaryPlanes; }
 
@@ -91,12 +105,15 @@ private:
 	int m_nLength = 0;
 	XMFLOAT3 m_xmf3Scale;
 
+	float m_fWaterHeight = 250.f;
+
 	XMFLOAT2									m_xmf2UVTranslation = XMFLOAT2(0,0);
 	ConstantBuffer								m_TerrainCBuffer;
 
-	std::array<XMFLOAT4, 4>		m_xmf4MapBoundaryPlanes = {};
+	std::array<XMFLOAT4, 4>						m_xmf4MapBoundaryPlanes = {};
 
-	std::array<std::shared_ptr<Texture>, 7>		m_pBillboardTextures;
-
+	std::array<std::shared_ptr<Texture>, 3>		m_pBillboardTextures;
+	std::vector<BillboardParameters>			m_Billboards;
+	ConstantBuffer								m_BillboardCBuffer;
 };
 

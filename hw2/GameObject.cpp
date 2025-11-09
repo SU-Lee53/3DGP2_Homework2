@@ -9,6 +9,12 @@ GameObject::GameObject()
 	m_xmf4x4World = Matrix4x4::Identity();
 }
 
+void GameObject::Initialize()
+{
+	UpdateTransform(NULL);
+	GenerateBigBoundingBox();
+}
+
 void GameObject::SetMesh(std::shared_ptr<Mesh> pMesh)
 {
 	m_pMesh = pMesh;
@@ -45,6 +51,8 @@ void GameObject::SetChild(std::shared_ptr<GameObject> pChild)
 void GameObject::Update(float fTimeElapsed)
 {
 	Animate(fTimeElapsed);
+
+	UpdateTransform(nullptr);
 }
 
 void GameObject::Animate(float fTimeElapsed) 
@@ -143,7 +151,6 @@ void GameObject::SetPosition(float x, float y, float z)
 	m_xmf4x4Transform._41 = x;
 	m_xmf4x4Transform._42 = y;
 	m_xmf4x4Transform._43 = z;
-
 	UpdateTransform(NULL);
 }
 
@@ -156,7 +163,6 @@ void GameObject::SetScale(float x, float y, float z)
 {
 	XMMATRIX mtxScale = XMMatrixScaling(x, y, z);
 	m_xmf4x4Transform = Matrix4x4::Multiply(mtxScale, m_xmf4x4Transform);
-
 	UpdateTransform(NULL);
 }
 
@@ -188,7 +194,6 @@ void GameObject::Rotate(float fPitch, float fYaw, float fRoll)
 {
 	XMMATRIX mtxRotate = XMMatrixRotationRollPitchYaw(XMConvertToRadians(fPitch), XMConvertToRadians(fYaw), XMConvertToRadians(fRoll));
 	m_xmf4x4Transform = Matrix4x4::Multiply(mtxRotate, m_xmf4x4Transform);
-
 	UpdateTransform(NULL);
 }
 
@@ -196,7 +201,6 @@ void GameObject::Rotate(XMFLOAT3* pxmf3Axis, float fAngle)
 {
 	XMMATRIX mtxRotate = XMMatrixRotationAxis(XMLoadFloat3(pxmf3Axis), XMConvertToRadians(fAngle));
 	m_xmf4x4Transform = Matrix4x4::Multiply(mtxRotate, m_xmf4x4Transform);
-
 	UpdateTransform(NULL);
 }
 
@@ -204,8 +208,12 @@ void GameObject::Rotate(XMFLOAT4* pxmf4Quaternion)
 {
 	XMMATRIX mtxRotate = XMMatrixRotationQuaternion(XMLoadFloat4(pxmf4Quaternion));
 	m_xmf4x4Transform = Matrix4x4::Multiply(mtxRotate, m_xmf4x4Transform);
-
 	UpdateTransform(NULL);
+}
+
+void GameObject::CacheLastFrameTransform()
+{
+	m_xmf4x4CachedLastFrameTransform = m_xmf4x4Transform;
 }
 
 void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
@@ -217,7 +225,6 @@ void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 	}
 
 	if (!m_pParent) {
-		m_xmOBBInWorld = m_xmOBB;
 		m_xmOBB.Transform(m_xmOBBInWorld, XMLoadFloat4x4(&m_xmf4x4World));
 	}
 
@@ -242,19 +249,24 @@ std::shared_ptr<GameObject> GameObject::FindFrame(const std::string& strFrameNam
 	return nullptr;
 }
 
-void GameObject::GenerateBigBoundingBox()
+bool GameObject::IsInFrustum(std::shared_ptr<Camera> pCamera)
+{
+	return pCamera->IsInFrustum(m_xmOBBInWorld);
+}
+
+void GameObject::GenerateBigBoundingBox(bool bFlipYZ, bool bCenterOnFloor)
 {
 	if (m_pChildren.size() == 0) {
 		return;
 	}
 
-	float fMinX = FLT_MAX;
-	float fMinY = FLT_MAX;
-	float fMinZ = FLT_MAX;
+	float fMinX = std::numeric_limits<float>::max();
+	float fMinY = std::numeric_limits<float>::max();
+	float fMinZ = std::numeric_limits<float>::max();
 	
-	float fMaxX = FLT_MIN;
-	float fMaxY = FLT_MIN;
-	float fMaxZ = FLT_MIN;
+	float fMaxX = std::numeric_limits<float>::lowest();
+	float fMaxY = std::numeric_limits<float>::lowest();
+	float fMaxZ = std::numeric_limits<float>::lowest();
 
 	for (auto pChild : m_pChildren) {
 		pChild->UpdateMinMaxInBoundingBox(fMinX, fMaxX, fMinY, fMaxY, fMinZ, fMaxZ);
@@ -267,10 +279,18 @@ void GameObject::GenerateBigBoundingBox()
 	float fCenterX = (fMaxX + fMinX) / 2;
 	float fCenterY = (fMaxY + fMinY) / 2;
 	float fCenterZ = (fMaxZ + fMinZ) / 2;
+	if (bFlipYZ) {
+		std::swap(fCenterY, fCenterZ);
+		fCenterY = -fCenterY;
+	}
 
 	m_xmOBB.Center = XMFLOAT3(fCenterX, fCenterY, fCenterZ);
 	m_xmOBB.Extents = XMFLOAT3(fHalfLengthX, fHalfLengthY, fHalfLengthZ);
-	m_fHalfHeight = fHalfLengthY;
+	m_fHalfHeight = bCenterOnFloor ? 0.f : fHalfLengthY;
+
+	// 가끔 중심점이 밑바닥에 있어 fHalfLengthY 를 사용하면 땅 위에 떠버리는 경우들이 있음
+	// 코드로는 확인이 어려울것으로 보이고 직접 눈으로 확인해서 이상하면 이걸 수동으로 설정해주어야할듯함
+
 }
 
 void GameObject::UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fMinY, float& fMaxY, float& fMinZ, float& fMaxZ)
@@ -286,13 +306,13 @@ void GameObject::UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fM
 		XMStoreFloat3(&xmf3OBBMax, XMVector3Rotate(XMVectorAdd(xmvOBBCenter, xmvOBBExtent), xmvOBBOrientation));
 		XMStoreFloat3(&xmf3OBBMin, XMVector3Rotate(XMVectorSubtract(xmvOBBCenter, xmvOBBExtent), xmvOBBOrientation));
 
-		fMinX = min(fMinX, xmf3OBBMin.x);
-		fMinY = min(fMinY, xmf3OBBMin.y);
-		fMinZ = min(fMinZ, xmf3OBBMin.z);
-
-		fMaxX = max(fMaxX, xmf3OBBMax.x);
-		fMaxY = max(fMaxY, xmf3OBBMax.y);
-		fMaxZ = max(fMaxZ, xmf3OBBMax.z);
+		fMinX = std::min(fMinX, xmf3OBBMin.x);
+		fMinY = std::min(fMinY, xmf3OBBMin.y);
+		fMinZ = std::min(fMinZ, xmf3OBBMin.z);
+		
+		fMaxX = std::max(fMaxX, xmf3OBBMax.x);
+		fMaxY = std::max(fMaxY, xmf3OBBMax.y);
+		fMaxZ = std::max(fMaxZ, xmf3OBBMax.z);
 	}
 
 	for (auto pChild : m_pChildren) {
@@ -302,8 +322,6 @@ void GameObject::UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fM
 
 void GameObject::AddToRenderMap()
 {
-	OnPrepareRender();
-
 	if (m_pMesh) {
 		RENDER->Add(shared_from_this());
 	}
@@ -320,6 +338,12 @@ void GameObject::ReleaseUploadBuffers()
 	for (auto& pChild : m_pChildren) {
 		pChild->ReleaseUploadBuffers();
 	}
+}
+
+bool GameObject::CheckCollisionSet(std::shared_ptr<GameObject> pOther)
+{
+	auto it = m_pCollisionSet.find(pOther);
+	return it != m_pCollisionSet.end();
 }
 
 void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile)
@@ -546,6 +570,9 @@ std::shared_ptr<GameObject> GameObject::CopyObject(const GameObject& srcObject, 
 	pClone->m_pMaterials = srcObject.m_pMaterials;
 	pClone->m_xmf4x4Transform = srcObject.m_xmf4x4Transform;
 	pClone->m_xmf4x4World = srcObject.m_xmf4x4World;
+
+	pClone->m_xmOBB = srcObject.m_xmOBB;
+	pClone->m_xmOBBInWorld = srcObject.m_xmOBBInWorld;
 
 	pClone->m_pParent = pParent;
 

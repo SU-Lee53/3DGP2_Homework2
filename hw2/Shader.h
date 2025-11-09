@@ -54,6 +54,10 @@ protected:
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader() override;
 	virtual D3D12_SHADER_BYTECODE CreatePixelShader() override;
 
+	D3D12_SHADER_BYTECODE CreateBillboardVertexShader();
+	D3D12_SHADER_BYTECODE CreateBillboardGeometryShader();
+	D3D12_SHADER_BYTECODE CreateBillboardPixelShader();
+
 };
 
 class OBBDebugShader : public Shader {
