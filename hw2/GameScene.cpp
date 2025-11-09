@@ -123,10 +123,10 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 			//pTowerObject->Initialize();
 			pTowerObject->UpdateTransform(nullptr);
 			pTowerObject->GenerateBigBoundingBox(true, true);
-
+		
 			for (int i = 0; i < 10; i++) {
 				auto pCopied = GameObject::CopyObject(*pTowerObject);
-
+		
 				float fPosX = 0.f;
 				float fPosZ = 0.f;
 				while (true) {
@@ -135,12 +135,12 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 					float fHeight = m_pTerrain->GetHeight(fPosX, fPosZ);
 					if (fHeight > m_pTerrain->GetWaterHeight()) break;
 				}
-
+		
 				pCopied->SetPosition(XMFLOAT3(fPosX, 0.f, fPosZ));
 				m_pGameObjects.push_back(pCopied);
 			}
 		}
-
+		
 		// Tank
 		{
 			auto pTank = RESOURCE->CopyGameObject("Tank");
@@ -150,12 +150,12 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 			//pTankObject->Initialize();
 			pTankObject->UpdateTransform(nullptr);
 			pTankObject->GenerateBigBoundingBox();
-
+		
 			XMFLOAT3 xmf3RotationAxis = XMFLOAT3(0.f, 1.f, 0.f);
-
+		
 			for (int i = 0; i < 10; i++) {
 				auto pCopied = GameObject::CopyObject(*pTankObject);
-
+		
 				float fPosX = 0.f;
 				float fPosZ = 0.f;
 				float fRotationY = 0.f;
@@ -165,13 +165,17 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 					float fHeight = m_pTerrain->GetHeight(fPosX, fPosZ);
 					if (fHeight > m_pTerrain->GetWaterHeight()) break;
 				}
-
+		
 				pCopied->SetPosition(XMFLOAT3(fPosX, 0.f, fPosZ));
 				pCopied->Rotate(&xmf3RotationAxis, RandomGenerator::GenerateRandomFloatInRange(0.f, 360.f));
-
+				pCopied->SetExplosible(true);
+		
 				m_pGameObjects.push_back(pCopied);
 			}
 		}
+
+
+
 	}
 
 	m_pHPTextSprite = std::make_shared<TextSprite>("", 0.0f, 0.0f, 0.3f, 0.05f, XMFLOAT4(1, 0, 0, 1), 1, true);
@@ -218,6 +222,19 @@ bool GameScene::ProcessInput(UCHAR* pKeysBuffer)
 			m_pPlayer->Move(dwDirection, 1.5f, true);
 		}
 	}
+
+	if (pKeysBuffer[VK_RBUTTON] & 0xF0) {
+		POINT ptCursorClicked{};
+		::GetCursorPos(&ptCursorClicked);
+		::ScreenToClient(GameFramework::g_hWnd, &ptCursorClicked);
+		auto p = PickObjectPointedByCursor(ptCursorClicked.x, ptCursorClicked.y, GetCamera());
+		if (p) {
+			if (p->IsExplosible()) {
+				__debugbreak();
+			}
+		}
+	}
+
 	return true;
 }
 

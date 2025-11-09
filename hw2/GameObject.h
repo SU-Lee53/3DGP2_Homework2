@@ -103,6 +103,11 @@ public:
 	void EraseFromCollisionSet(std::shared_ptr<GameObject> pOther) { m_pCollisionSet.erase(m_pCollisionSet.find(pOther)); }
 	bool CheckCollisionSet(std::shared_ptr<GameObject> pOther);
 
+	void GenerateRayForPicking(XMVECTOR& xmvPickPosition, const XMMATRIX& xmmtxView, XMVECTOR& xmvPickRayOrigin, XMVECTOR& xmvPickRayDirection) const;
+	bool PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, const XMMATRIX& xmmtxView, float& fHitDistance) const;
+
+	void SetExplosible(bool bExplosible) { m_bCanExplode = bExplosible; }
+	bool IsExplosible() { return m_bCanExplode; }
 
 public:
 	std::string m_strFrameName;
@@ -123,6 +128,8 @@ public:
 
 	// Collision
 	std::unordered_set<std::shared_ptr<GameObject>> m_pCollisionSet = {};
+	
+	bool m_bCanExplode = false;
 
 public:
 	void LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile);

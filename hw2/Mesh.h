@@ -21,6 +21,7 @@ public:
 	VERTEX_TYPE GetType() { return (VERTEX_TYPE)m_nType; }
 
 	const BoundingOrientedBox& GetOBB() const { return m_xmOBBInWorld; }
+	const BoundingOrientedBox& GetOBBOrigin() const { return m_xmOBB; }
 	void UpdateOBB(XMFLOAT4X4 xmf4x4World);
 
 	virtual void ReleaseUploadBuffers();

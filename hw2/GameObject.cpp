@@ -346,6 +346,35 @@ bool GameObject::CheckCollisionSet(std::shared_ptr<GameObject> pOther)
 	return it != m_pCollisionSet.end();
 }
 
+void GameObject::GenerateRayForPicking(XMVECTOR& xmvPickPosition, const XMMATRIX& xmmtxView, XMVECTOR& xmvPickRayOrigin, XMVECTOR& xmvPickRayDirection) const
+{
+	XMMATRIX xmmtxInvWorld = XMMatrixInverse(nullptr, XMMatrixMultiply(XMLoadFloat4x4(&m_xmf4x4World), xmmtxView));
+
+
+	XMFLOAT3 xmf3CameraOrigin{ 0.f, 0.f,0.f };
+	xmvPickRayOrigin = XMVector3TransformCoord(XMLoadFloat3(&xmf3CameraOrigin), xmmtxInvWorld);
+	xmvPickRayDirection = XMVector3TransformCoord(xmvPickPosition, xmmtxInvWorld);
+	xmvPickRayDirection = XMVector3Normalize(xmvPickRayDirection - xmvPickRayOrigin);
+}
+
+bool GameObject::PickObjectByRayIntersection(XMVECTOR& xmvPickPosition, const XMMATRIX& xmmtxView, float& fHitDistance) const
+{
+	bool bResult;
+
+	if (m_pMesh) {
+		XMVECTOR xmvPickRayOrigin, xmvPickRayDirection;
+		GenerateRayForPicking(xmvPickPosition, xmmtxView, xmvPickRayOrigin, xmvPickRayDirection);
+
+		return m_pMesh->GetOBBOrigin().Intersects(xmvPickRayOrigin, xmvPickRayDirection, fHitDistance);
+	}
+
+	for (auto pChild : m_pChildren) {
+		bResult = pChild->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, fHitDistance);
+	}
+
+	return bResult;
+}
+
 void GameObject::LoadMaterialsFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, std::ifstream& inFile)
 {
 	std::string strRead;

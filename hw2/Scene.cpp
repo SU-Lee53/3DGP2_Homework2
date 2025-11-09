@@ -59,10 +59,9 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 	for (auto& pObj : m_pGameObjects) {
 		pObj->UpdateTransform();
 		pObj->OnPrepareRender();
-		pObj->AddToRenderMap();
-		//if (pObj->IsInFrustum(GetCamera())) {
-		//	pObj->AddToRenderMap();
-		//}
+		if (pObj->IsInFrustum(GetCamera())) {
+			pObj->AddToRenderMap();
+		}
 	}
 
 	for (auto& pSprite : m_pSprites) {
@@ -195,6 +194,33 @@ void Scene::CheckCollision()
 		}
 
 	}
+}
+
+std::shared_ptr<GameObject> Scene::PickObjectPointedByCursor(int xClient, int yClient, std::shared_ptr<Camera> pCamera)
+{
+	XMFLOAT3 xmf3PickPosition;
+	
+	xmf3PickPosition.x = (((2.0f * xClient) / (float)pCamera->GetViewport().Width) - 1) / pCamera->GetProjectionMatrix()._11;
+	xmf3PickPosition.y = -(((2.0f * yClient) / (float)pCamera->GetViewport().Height) - 1) / pCamera->GetProjectionMatrix()._22;
+	xmf3PickPosition.z = 1.0f;
+
+	XMVECTOR xmvPickPosition = XMLoadFloat3(&xmf3PickPosition);
+	XMMATRIX xmmtxView = XMLoadFloat4x4(&pCamera->GetViewMatrix());
+
+	BOOL bIntersected = FALSE;
+	float fNearestHitDistance = std::numeric_limits<float>::max();
+	std::shared_ptr<GameObject> pNearestObject = nullptr;
+	for (auto& pObj : m_pGameObjects) {
+		float fHitDistance = std::numeric_limits<float>::max();
+		bIntersected = pObj->PickObjectByRayIntersection(xmvPickPosition, xmmtxView, fHitDistance);
+		if ((bIntersected) && (fHitDistance < fNearestHitDistance)) {
+			fNearestHitDistance = fHitDistance;
+			pNearestObject = pObj;
+		}
+	}
+
+	return pNearestObject;
+
 }
 
 std::shared_ptr<Camera> Scene::GetCamera() const

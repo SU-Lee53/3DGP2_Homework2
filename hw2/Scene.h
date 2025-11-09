@@ -47,6 +47,7 @@ public:
 
 public:
 	void CheckCollision();
+	std::shared_ptr<GameObject> PickObjectPointedByCursor(int xClient, int yClient, std::shared_ptr<Camera> pCamera);
 
 public:
 	std::shared_ptr<Camera> GetCamera() const;
