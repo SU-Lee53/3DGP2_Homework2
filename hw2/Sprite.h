@@ -5,6 +5,7 @@
 enum SPRITE_TYPE : UINT8 {
 	SPRITE_TYPE_TEXTURE = 0,
 	SPRITE_TYPE_TEXT,
+	SPRITE_TYPE_BILLBOARD,
 
 	SPRITE_TYPE_COUNT
 };
@@ -78,7 +79,7 @@ struct CB_TEXT_DATA {
 
 class TextSprite : public Sprite {
 public:
-	TextSprite(const std::string& strText, float fLeft, float fTop, float fRight, float fBottom, XMFLOAT4 xmf4TextColor = XMFLOAT4(1,1,1,1), UINT uiLayerIndex = 0, bool bClickable = false);
+	TextSprite(const std::string& strText, float fLeft, float fTop, float fRight, float fBottom, XMFLOAT4 xmf4TextColor = XMFLOAT4(1, 1, 1, 1), UINT uiLayerIndex = 0, bool bClickable = false);
 	virtual ~TextSprite() {};
 
 	void SetText(const std::string& strText);
@@ -93,6 +94,38 @@ private:
 	char m_cstrText[MAX_CHARACTER_PER_SPRITE];
 	int m_nTextLength = 0;
 	XMFLOAT4 m_xmf4TextColor{ 1.f, 1.f, 1.f, 1.f };
+
+};
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// BillboardSprite
+
+struct CB_BILLBOARD_SPRITE_DATA {
+	XMFLOAT3 xmf3Position;
+	UINT pad1 = 0;
+	XMFLOAT2 xmf2Size;
+	XMUINT2 pad2 = XMUINT2(0,0);
+	XMFLOAT3 xmf3CameraPosition;
+	UINT pad3 = 0;
+	XMFLOAT4X4 xmf4x4ViewProjection;
+};
+
+class BillboardSprite : public Sprite {
+public:
+	BillboardSprite(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strTextureName, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size);
+	virtual ~BillboardSprite() {};
+
+	void SetTexture(std::shared_ptr<Texture> pTexture);
+
+	virtual void AddToUI(UINT nLayerIndex) override;
+	virtual void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& descHandle) const override;
+
+private:
+	std::shared_ptr<Texture> m_pTexture;
+	XMFLOAT3 m_xmf3Position;
+	XMFLOAT2 m_xmf2Size;
+
+	ConstantBuffer m_BillboardCBuffer;
 
 };
 

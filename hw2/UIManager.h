@@ -49,12 +49,13 @@ private:
 
 private:
 	ComPtr<ID3D12RootSignature> m_pd3dUIRootSignature = nullptr;
-	ComPtr<ID3D12PipelineState> m_pd3dUIPipelineStates[2];
+	ComPtr<ID3D12PipelineState> m_pd3dUIPipelineStates[3];
 
 	ComPtr<ID3D12Device>			m_pd3dDevice = nullptr;	// GameFramewok::m_pd3dDevice ÀÇ ÂüÁ¶
 	ComPtr<ID3D12DescriptorHeap>	m_pd3dDescriptorHeap = nullptr;
 
 	UILayer m_UILayer{};
+	std::vector<Sprite> m_BillboardsInWorld;
 
 };
 

@@ -157,3 +157,24 @@ void TextSprite::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCo
 
 	pd3dCommandList->DrawInstanced(m_nTextLength, 1, 0, 0);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// BillboardSprite
+
+BillboardSprite::BillboardSprite(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strTextureName, XMFLOAT3 xmf3Position, XMFLOAT2 xmf2Size)
+	: Sprite(0, 0, 0, 0, 0, false)
+{
+	m_pTexture = TEXTURE->GetTexture(strTextureName);
+	m_xmf3Position = xmf3Position;
+	m_xmf2Size = xmf2Size;
+
+	m_BillboardCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_BILLBOARD_SPRITE_DATA>::value, true);
+}
+
+void BillboardSprite::AddToUI(UINT nLayerIndex)
+{
+}
+
+void BillboardSprite::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& descHandle) const
+{
+}

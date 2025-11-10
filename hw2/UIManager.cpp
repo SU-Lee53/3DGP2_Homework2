@@ -24,7 +24,7 @@ UIManager::UIManager(ComPtr<ID3D12Device> pd3dDevice)
 
 void UIManager::CreateRootSignature()
 {
-	D3D12_DESCRIPTOR_RANGE d3dDescRanges[4];
+	D3D12_DESCRIPTOR_RANGE d3dDescRanges[3];
 	// Font 텍스쳐
 	d3dDescRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	d3dDescRanges[0].NumDescriptors = 1;
@@ -153,6 +153,20 @@ void UIManager::CreatePipelineState()
 	if (FAILED(hr)) {
 		__debugbreak();
 	}
+
+	{
+		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSBillboardSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSBillboardSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
+		d3dPipelineDesc.PS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "PSBillboardSprite", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+	}
+
+	hr = m_pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dUIPipelineStates[2].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+
+	// 11.10
+	// TODO : Root Signature, Pipeline State 재설정
 }
 
 void UIManager::Add(std::shared_ptr<Sprite> pSprite, UINT nSpriteType, UINT nLayerIndex)

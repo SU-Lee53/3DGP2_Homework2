@@ -177,3 +177,78 @@ float4 PSTextSprite(GS_SPRITE_OUTPUT input) : SV_Target
 {
     return gtxtFontTexture.Sample(gSamplerState, input.uv) * gcTextColor;
 }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Billboard Sprite
+// 월드에 Billboard 형태로 존재하는 UI를 그림
+
+cbuffer BILLBOARD_SPRITE_DATA : register(b1)
+{
+    float3 gvBillboardPosition : packoffset(c0);
+    float2 gvBillboardSize : packoffset(c1);
+    float3 gvCameraPosition : packoffset(c2);
+    float4x4 gmtxViewProject : packoffset(c3);
+};
+
+struct VS_BILLBOARD_SPRITE_OUTPUT
+{
+    uint nVertexID : VERTEXID;
+};
+
+struct GS_BILLBOARD_SPRITE_OUTPUT
+{
+    float4 position : SV_POSITION;
+    float2 uv : TEXCOORD0;
+};
+
+VS_SPRITE_OUTPUT VSBillboardSprite(uint nVertexID : SV_VertexID)
+{
+    VS_BILLBOARD_SPRITE_OUTPUT output;
+    output.nVertexID = nVertexID;
+    return output;
+}
+
+[maxvertexcount(4)]
+void GSBillboardSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_BILLBOARD_SPRITE_OUTPUT> outStream)
+{
+    float3 vUp = float3(0.f, 1.f, 0.f);
+    float3 vLook = gvCameraPosition.xyz - gvBillboardPosition;
+    vLook = normalize(vLook);
+    float3 vRight = cross(vUp, vLook);
+    
+    float fHalfWidth = gvBillboardSize.x * 0.5f;
+    float fHalfHeight = gvBillboardSize.y * 0.5f;
+    
+    float4 vertices[4];
+    vertices[0] = float4(gvBillboardPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[1] = float4(gvBillboardPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[2] = float4(gvBillboardPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[3] = float4(gvBillboardPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    
+    float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    
+    matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
+    
+    GS_BILLBOARD_SPRITE_OUTPUT output;
+    
+    output.position = mul(vertices[0], gmtxViewProject);
+    output.uv = uvs[0];
+    outStream.Append(output);
+    
+    output.position = mul(vertices[1], gmtxViewProject);
+    output.uv = uvs[1];
+    outStream.Append(output);
+    
+    output.position = mul(vertices[2], gmtxViewProject);
+    output.uv = uvs[2];
+    outStream.Append(output);
+    
+    output.position = mul(vertices[3], gmtxViewProject);
+    output.uv = uvs[3];
+    outStream.Append(output);
+}
+
+float4 PSBillboardSprite(GS_SPRITE_OUTPUT input) : SV_Target
+{
+    return gtxtSpriteTexture.Sample(gSamplerState, input.uv);
+}
