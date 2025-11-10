@@ -24,7 +24,7 @@ UIManager::UIManager(ComPtr<ID3D12Device> pd3dDevice)
 
 void UIManager::CreateRootSignature()
 {
-	D3D12_DESCRIPTOR_RANGE d3dDescRanges[3];
+	D3D12_DESCRIPTOR_RANGE d3dDescRanges[5];
 	// Font 텍스쳐
 	d3dDescRanges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
 	d3dDescRanges[0].NumDescriptors = 1;
@@ -32,35 +32,64 @@ void UIManager::CreateRootSignature()
 	d3dDescRanges[0].RegisterSpace = 0;
 	d3dDescRanges[0].OffsetInDescriptorsFromTableStart = 0;
 
-	// RECT, Text 정보
+	// RECT 정보
 	d3dDescRanges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
-	d3dDescRanges[1].NumDescriptors = 2;
+	d3dDescRanges[1].NumDescriptors = 1;
 	d3dDescRanges[1].BaseShaderRegister = 0;
 	d3dDescRanges[1].RegisterSpace = 0;
 	d3dDescRanges[1].OffsetInDescriptorsFromTableStart = 0;
-
-	// Texture
-	d3dDescRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	
+	// Text 정보
+	d3dDescRanges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
 	d3dDescRanges[2].NumDescriptors = 1;
-	d3dDescRanges[2].BaseShaderRegister = 1;
+	d3dDescRanges[2].BaseShaderRegister = 0;
 	d3dDescRanges[2].RegisterSpace = 0;
 	d3dDescRanges[2].OffsetInDescriptorsFromTableStart = 0;
 
-	D3D12_ROOT_PARAMETER d3dRootParameters[3];
+	// Texture
+	d3dDescRanges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
+	d3dDescRanges[3].NumDescriptors = 1;
+	d3dDescRanges[3].BaseShaderRegister = 1;
+	d3dDescRanges[3].RegisterSpace = 0;
+	d3dDescRanges[3].OffsetInDescriptorsFromTableStart = 0;
+
+	// Billboard
+	d3dDescRanges[4].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+	d3dDescRanges[4].NumDescriptors = 1;
+	d3dDescRanges[4].BaseShaderRegister = 1;
+	d3dDescRanges[4].RegisterSpace = 0;
+	d3dDescRanges[4].OffsetInDescriptorsFromTableStart = 0;
+
+	D3D12_ROOT_PARAMETER d3dRootParameters[5];
+	// Font Texture
 	d3dRootParameters[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	d3dRootParameters[0].DescriptorTable.NumDescriptorRanges = 1;
 	d3dRootParameters[0].DescriptorTable.pDescriptorRanges = &d3dDescRanges[0];
 	d3dRootParameters[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 					
+	// RECT
 	d3dRootParameters[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	d3dRootParameters[1].DescriptorTable.NumDescriptorRanges = 1;
 	d3dRootParameters[1].DescriptorTable.pDescriptorRanges = &d3dDescRanges[1];
 	d3dRootParameters[1].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-					
+	
+	// Text
 	d3dRootParameters[2].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	d3dRootParameters[2].DescriptorTable.NumDescriptorRanges = 1;
 	d3dRootParameters[2].DescriptorTable.pDescriptorRanges = &d3dDescRanges[2];
 	d3dRootParameters[2].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	
+	// Texture
+	d3dRootParameters[3].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	d3dRootParameters[3].DescriptorTable.NumDescriptorRanges = 1;
+	d3dRootParameters[3].DescriptorTable.pDescriptorRanges = &d3dDescRanges[3];
+	d3dRootParameters[3].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+	
+	// Billboard data
+	d3dRootParameters[4].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	d3dRootParameters[4].DescriptorTable.NumDescriptorRanges = 1;
+	d3dRootParameters[4].DescriptorTable.pDescriptorRanges = &d3dDescRanges[4];
+	d3dRootParameters[4].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
 	D3D12_STATIC_SAMPLER_DESC d3dSamplerDesc;
 	d3dSamplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
@@ -143,6 +172,7 @@ void UIManager::CreatePipelineState()
 		__debugbreak();
 	}
 
+	// m_pd3dUIPipelineState[1] : Text UI
 	{
 		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSTextSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
 		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSTextSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
@@ -154,10 +184,12 @@ void UIManager::CreatePipelineState()
 		__debugbreak();
 	}
 
+	// m_pd3dUIPipelineState[2] : Billboard UI
 	{
 		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSBillboardSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
 		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSBillboardSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
 		d3dPipelineDesc.PS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "PSBillboardSprite", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
 	}
 
 	hr = m_pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dUIPipelineStates[2].GetAddressOf()));
@@ -204,6 +236,10 @@ void UIManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 			}
 		}
 	}
+
+	// 11.10
+	// 월드의 빌보드 UI 를 그린다
+	// TODO : 그전에 블렌딩을 위해 카메라에서 먼것부터 정렬을 해야함 <- 꼭 해야하는지 생각해볼것
 }
 
 void UIManager::Clear()

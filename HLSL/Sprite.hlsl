@@ -182,7 +182,7 @@ float4 PSTextSprite(GS_SPRITE_OUTPUT input) : SV_Target
 // Billboard Sprite
 // 월드에 Billboard 형태로 존재하는 UI를 그림
 
-cbuffer BILLBOARD_SPRITE_DATA : register(b1)
+cbuffer BILLBOARD_SPRITE_DATA : register(b2)
 {
     float3 gvBillboardPosition : packoffset(c0);
     float2 gvBillboardSize : packoffset(c1);
@@ -226,8 +226,6 @@ void GSBillboardSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_
     vertices[3] = float4(gvBillboardPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
     
     float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
-    
-    matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
     
     GS_BILLBOARD_SPRITE_OUTPUT output;
     
