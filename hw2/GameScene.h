@@ -26,5 +26,9 @@ public:
 private:
 	POINT							m_ptOldCursorPos;
 	std::shared_ptr<TextSprite>		m_pHPTextSprite;
+
+	// 미리 만든다
+	std::shared_ptr<BillboardSprite> m_pBillboardSprites[10];
+
 };
 

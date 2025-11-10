@@ -116,6 +116,8 @@ public:
 	virtual ~BillboardSprite() {};
 
 	void SetTexture(std::shared_ptr<Texture> pTexture);
+	void SetPosition(XMFLOAT3 xmf3Position);
+	void SetSize(XMFLOAT2 xmf2Size);
 
 	virtual void AddToUI(UINT nLayerIndex) override;
 	virtual void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& descHandle) const override;

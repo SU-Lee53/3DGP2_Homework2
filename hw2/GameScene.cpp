@@ -146,10 +146,9 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 			auto pTank = RESOURCE->CopyGameObject("Tank");
 			pTank->SetScale(50, 50, 50);
 			std::shared_ptr<GameObject> pTankObject = std::make_shared<GameObject>();
+			pTankObject->SetName("Tank");
 			pTankObject->SetChild(pTank);
-			//pTankObject->Initialize();
-			pTankObject->UpdateTransform(nullptr);
-			pTankObject->GenerateBigBoundingBox();
+			pTankObject->Initialize();
 		
 			XMFLOAT3 xmf3RotationAxis = XMFLOAT3(0.f, 1.f, 0.f);
 		
@@ -171,11 +170,12 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 				pCopied->SetExplosible(true);
 		
 				m_pGameObjects.push_back(pCopied);
+
+				// 빌보드 오브젝트 미리 만듬
+				// pCopied 의 것이 아니라 그냥 10개를 미리 만드는 것이고, 나중에 위치를 바꿔서 UIManager 에 넣어줌
+				m_pBillboardSprites[i] = std::make_shared<BillboardSprite>(pd3dDevice, pd3dCommandList, "indicator", XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT2(80.f, 80.f));
 			}
 		}
-
-
-
 	}
 
 	m_pHPTextSprite = std::make_shared<TextSprite>("", 0.0f, 0.0f, 0.3f, 0.05f, XMFLOAT4(1, 0, 0, 1), 1, true);
@@ -258,13 +258,28 @@ void GameScene::Update(float fTimeElapsed)
 
 	m_pHPTextSprite->SetText(std::format("HP:{}", (int)m_pPlayer->GetHP()));
 
-
 	Scene::CheckCollision();
 	Scene::Update(fTimeElapsed);
 }
 
 void GameScene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
+	int nTank = 0;
+	for (auto pObj : m_pGameObjects) {
+		if (pObj->GetName() == "Tank") {
+			XMFLOAT3 xmf3TankPosition = pObj->GetPosition();
+			XMFLOAT3 xmf3Up = XMFLOAT3(0.f, 1.f, 0.f);
+			float fBillboardHeight = 150.f;
+
+			XMFLOAT3 xmf3BillboardPos;
+			XMStoreFloat3(&xmf3BillboardPos, XMVectorAdd(XMLoadFloat3(&xmf3TankPosition), XMLoadFloat3(&xmf3Up) * fBillboardHeight));
+
+			m_pBillboardSprites[nTank]->SetPosition(xmf3BillboardPos);
+			m_pBillboardSprites[nTank]->AddToUI(0);
+			nTank++;
+		}
+	}
+
 	Scene::Render(pd3dDevice, pd3dCommandList);
 }
 

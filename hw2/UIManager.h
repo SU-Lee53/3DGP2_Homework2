@@ -55,7 +55,7 @@ private:
 	ComPtr<ID3D12DescriptorHeap>	m_pd3dDescriptorHeap = nullptr;
 
 	UILayer m_UILayer{};
-	std::vector<Sprite> m_BillboardsInWorld;
+	std::vector<std::shared_ptr<Sprite>> m_pBillboardsInWorld;
 
 };
 

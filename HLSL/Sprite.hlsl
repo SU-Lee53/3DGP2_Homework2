@@ -201,7 +201,7 @@ struct GS_BILLBOARD_SPRITE_OUTPUT
     float2 uv : TEXCOORD0;
 };
 
-VS_SPRITE_OUTPUT VSBillboardSprite(uint nVertexID : SV_VertexID)
+VS_BILLBOARD_SPRITE_OUTPUT VSBillboardSprite(uint nVertexID : SV_VertexID)
 {
     VS_BILLBOARD_SPRITE_OUTPUT output;
     output.nVertexID = nVertexID;
@@ -209,7 +209,7 @@ VS_SPRITE_OUTPUT VSBillboardSprite(uint nVertexID : SV_VertexID)
 }
 
 [maxvertexcount(4)]
-void GSBillboardSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_BILLBOARD_SPRITE_OUTPUT> outStream)
+void GSBillboardSprite(point VS_BILLBOARD_SPRITE_OUTPUT input[1], inout TriangleStream<GS_BILLBOARD_SPRITE_OUTPUT> outStream)
 {
     float3 vUp = float3(0.f, 1.f, 0.f);
     float3 vLook = gvCameraPosition.xyz - gvBillboardPosition;
@@ -246,7 +246,7 @@ void GSBillboardSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_
     outStream.Append(output);
 }
 
-float4 PSBillboardSprite(GS_SPRITE_OUTPUT input) : SV_Target
+float4 PSBillboardSprite(GS_BILLBOARD_SPRITE_OUTPUT input) : SV_Target
 {
     return gtxtSpriteTexture.Sample(gSamplerState, input.uv);
 }

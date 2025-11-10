@@ -19,6 +19,7 @@ void TextureManager::LoadGameTextures(ComPtr<ID3D12GraphicsCommandList> pd3dComm
 {
 	TEXTURE->LoadTexture(pd3dCommandList, "font", L"font.dds", RESOURCE_TYPE_TEXTURE2D);
 	TEXTURE->LoadTexture(pd3dCommandList, "intro", L"intro.dds", RESOURCE_TYPE_TEXTURE2D);
+	TEXTURE->LoadTexture(pd3dCommandList, "indicator", L"Indicator.dds", RESOURCE_TYPE_TEXTURE2D);
 }
 
 std::shared_ptr<Texture> TextureManager::LoadTexture(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strKey, const std::wstring& wstrTexturePath, UINT nResourceType)

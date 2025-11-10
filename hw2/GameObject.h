@@ -85,6 +85,7 @@ public:
 	std::vector<std::shared_ptr<Material>>& GetMaterials() { return m_pMaterials; }
 
 	void SetName(const std::string& strName) { m_strFrameName = strName; }
+	const std::string& GetName() const { return m_strFrameName; }
 
 public:
 	virtual void OnPrepareRender() {}

@@ -120,7 +120,6 @@ void GameFramework::Render()
 	UI->Clear();
 
 	RenderBegin();
-
 	
 	{
 		// TODO: Render Logic

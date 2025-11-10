@@ -28,6 +28,16 @@ void TexturedSprite::SetTexture(std::shared_ptr<Texture> pTexture)
 	m_pTexture = pTexture;
 }
 
+void BillboardSprite::SetPosition(XMFLOAT3 xmf3Position)
+{
+	m_xmf3Position = xmf3Position;
+}
+
+void BillboardSprite::SetSize(XMFLOAT2 xmf2Size)
+{
+	m_xmf2Size = xmf2Size;
+}
+
 void Sprite::CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	m_SpriteCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_SPRITE_DATA>::value, true);
@@ -175,8 +185,34 @@ BillboardSprite::BillboardSprite(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12G
 
 void BillboardSprite::AddToUI(UINT nLayerIndex)
 {
+	UI->Add(shared_from_this(), SPRITE_TYPE_BILLBOARD, 0);
 }
 
 void BillboardSprite::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& descHandle) const
 {
+	CB_BILLBOARD_SPRITE_DATA billboardData;
+	{
+		billboardData.xmf3Position = m_xmf3Position;
+		billboardData.xmf2Size = m_xmf2Size;
+		billboardData.xmf3CameraPosition = CUR_SCENE->GetCamera()->GetPosition();
+
+		XMMATRIX xmmtxCameraView = XMLoadFloat4x4(&CUR_SCENE->GetCamera()->GetViewMatrix());
+		XMMATRIX xmmtxCameraProjection = XMLoadFloat4x4(&CUR_SCENE->GetCamera()->GetProjectionMatrix());
+		XMStoreFloat4x4(&billboardData.xmf4x4ViewProjection, XMMatrixTranspose(XMMatrixMultiply(xmmtxCameraView, xmmtxCameraProjection)));
+	}
+	m_BillboardCBuffer.UpdateData<CB_BILLBOARD_SPRITE_DATA>(&billboardData);
+
+	pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, m_BillboardCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dCommandList->SetGraphicsRootDescriptorTable(4, descHandle.gpuHandle);
+	descHandle.gpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, m_pTexture->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	descHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dCommandList->SetGraphicsRootDescriptorTable(3, descHandle.gpuHandle);
+	descHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dCommandList->DrawInstanced(1, 1, 0, 0);
 }
