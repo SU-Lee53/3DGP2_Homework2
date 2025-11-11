@@ -58,6 +58,7 @@ void RenderManager::Add(std::shared_ptr<GameObject> pGameObject)
 void RenderManager::AddMirror(std::shared_ptr<MirrorObject> pMirrorObject)
 {
 	// TODO : Make it Happen
+	m_pMirrorObjects.push_back(pMirrorObject);
 }
 
 void RenderManager::AddTransparent(std::shared_ptr<MirrorObject> pMirrorObject)
@@ -96,6 +97,7 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 	RenderObjects(pd3dCommandList, descHandle);
 
+	
 
 	// TODO 추가
 	// RenderTerrain
@@ -166,6 +168,17 @@ void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandL
 void RenderManager::RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
 {
 	m_pTerrain->Render(m_pd3dDevice, pd3dCommandList, refDescHandle);
+}
+
+void RenderManager::RenderMirrors(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
+{
+	// 그리기 전에 카메라 거리 기준 먼것부터 정렬 필요
+	XMFLOAT3 xmf3CameraPosition = CUR_SCENE->GetCamera()->GetPosition();
+	XMVECTOR xmv; // 11.11 TODO : 여기부터
+	std::sort(m_pMirrorObjects.begin(), m_pMirrorObjects.end(), [&xmf3CameraPosition](const std::shared_ptr<MirrorObject>& lhs, const std::shared_ptr<MirrorObject> rhs) {
+
+
+	});
 }
 
 void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)

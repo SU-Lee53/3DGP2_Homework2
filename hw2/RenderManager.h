@@ -61,6 +61,7 @@ public:
 private:
 	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 	void RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	void RenderMirrors(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
 	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 

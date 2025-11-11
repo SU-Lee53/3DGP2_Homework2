@@ -242,10 +242,6 @@ void UIManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 		}
 	}
 
-	// 11.10
-	// TODO : 월드의 빌보드 UI 를 그린다
-	// 그전에 블렌딩을 위해 카메라에서 먼것부터 정렬을 해야함 <- 꼭 해야하는지 생각해볼것
-	// 반투명이 아닌 완전 투명으로 할 예정이라 굳이? 싶긴함
 	for (const auto& pBillboard : m_pBillboardsInWorld) {
 		pBillboard->Render(m_pd3dDevice, pd3dCommandList, descHandle);
 	}

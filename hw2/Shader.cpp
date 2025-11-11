@@ -258,36 +258,157 @@ D3D12_SHADER_BYTECODE StandardShader::CreatePixelShader()
 
 void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
 {
+	HRESULT hr;
+
 	// 총 4개의 파이프라인
 	// (거울 뒷면 필요없을듯 건물이 통으로 유리라 뒷면 볼일이 없음)
-	// 1. 월드의 객체들을 그림
+	// 1. 월드의 객체들을 그림 <- 이미 그림
 	// 2. 거울을 스텐실 버퍼에 그림
 	// 3. 거울에 반사된 객체들을 그림
 	// 4. 거울을 블렌딩해서 그림
-	// 이중 1, 4 는 원래의 StandardShader 로도 가능
-	// 따라서, 여기서는 2, 4 에 대한 파이프라인을 만든다 <- 진짜 그래도 되는지는 해보고 결정
+	// 2, 3, 4 만 만들면 됨
 
-	// 11.11
-	// TODO : 여기부터 시작
 	m_pd3dPipelineStates.resize(3);
 
+	// 2. 거울을 스텐실 버퍼에 그림
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc;
+	{
+		d3dPipelineDesc.pRootSignature = pd3dRootSignature ? pd3dRootSignature.Get() : RenderManager::g_pd3dRootSignature.Get();
+		d3dPipelineDesc.VS = CreateVertexShader();
+		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOp =D3D12_LOGIC_OP_NOOP;
+		d3dPipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = 0;	// 렌더 타겟 변경 X
+		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
+		d3dPipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		d3dPipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		d3dPipelineDesc.DepthStencilState.StencilEnable = true;
+		d3dPipelineDesc.DepthStencilState.StencilReadMask = 0xFF;
+		d3dPipelineDesc.DepthStencilState.StencilWriteMask = 0xFF;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		d3dPipelineDesc.DepthStencilState.BackFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.BackFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.BackFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+		d3dPipelineDesc.InputLayout = CreateInputLayout();
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
 
+	hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[0].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+
+	// 2. 거울에 반사된 객체들을 그림
+	// Stencil 값이 1 인 곳에만 그림
+	{
+		d3dPipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
+		d3dPipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
+		d3dPipelineDesc.RasterizerState.FrontCounterClockwise = true;
+		d3dPipelineDesc.RasterizerState.DepthClipEnable = true;
+		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
+		d3dPipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		d3dPipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		d3dPipelineDesc.DepthStencilState.StencilEnable = true;
+		d3dPipelineDesc.DepthStencilState.StencilReadMask = 0xFF;
+		d3dPipelineDesc.DepthStencilState.StencilWriteMask = 0xFF;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilDepthFailOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilPassOp = D3D12_STENCIL_OP_KEEP;
+		d3dPipelineDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_EQUAL;
+		d3dPipelineDesc.InputLayout = CreateInputLayout();
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[1].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+
+	// 3. 거울을 블렌딩하여 그림
+	{
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;	// 직접 정한 Blend Factor 를 이용하여 블렌딩 할 예정임
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_BLEND_FACTOR;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+		d3dPipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
+		d3dPipelineDesc.InputLayout = CreateInputLayout();
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[1].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
 
 }
 
 D3D12_INPUT_LAYOUT_DESC MirrorShader::CreateInputLayout()
 {
-	return D3D12_INPUT_LAYOUT_DESC();
+	m_d3dInputElements = {
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 2, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 3, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"BITANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 4, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+	};
+
+	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
+	inputLayoutDesc.NumElements = m_d3dInputElements.size();
+	inputLayoutDesc.pInputElementDescs = m_d3dInputElements.data();
+
+	return inputLayoutDesc;
 }
 
 D3D12_SHADER_BYTECODE MirrorShader::CreateVertexShader()
 {
-	return D3D12_SHADER_BYTECODE();
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "VSStandard", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
 }
 
 D3D12_SHADER_BYTECODE MirrorShader::CreatePixelShader()
 {
-	return D3D12_SHADER_BYTECODE();
+	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSStandard", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
