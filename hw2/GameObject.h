@@ -12,8 +12,7 @@ enum MOVE_DIR : UINT {
 };
 
 struct CB_OBJECT_DATA {
-	XMFLOAT4X4 xmf4GameObject;
-	CB_MATERIAL_DATA materialData;
+	XMFLOAT4X4 xmf4x4World;
 };
 
 struct CB_OBB_DEBUG_DATA {
@@ -35,6 +34,7 @@ public:
 	void SetMaterial(int nMaterial, std::shared_ptr<Material> pMaterial);
 
 	void SetChild(std::shared_ptr<GameObject> pChild);
+	const std::vector<std::shared_ptr<GameObject>>& GetChildren() const;
 
 public:
 	virtual void Initialize();
@@ -65,7 +65,7 @@ public:
 	void CacheLastFrameTransform();
 
 	std::shared_ptr<GameObject> GetParent() { return m_pParent; }
-	void UpdateTransform(XMFLOAT4X4* pxmf4x4Parent = NULL);
+	virtual void UpdateTransform(XMFLOAT4X4* pxmf4x4Parent = NULL);
 	std::shared_ptr<GameObject> FindFrame(const std::string& strFrameName);
 
 	UINT GetMeshType() { return (m_pMesh) ? m_pMesh->GetType() : 0; }

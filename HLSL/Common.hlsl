@@ -100,6 +100,15 @@ struct MATERIAL
 cbuffer cbGameObjectData : register(b4)
 {
     MATERIAL gMaterial;
+};
+
+cbuffer cbWorldTransformData : register(b5)
+{
+    matrix gmtxWorld;
+};
+
+cbuffer cbBaseOnWorldBuffer : register(b6)
+{
     int gnBaseIndex;
 };
 
@@ -130,7 +139,7 @@ Texture2D gtxtDetailNormalMap   : register(t11);
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug Data 
 
-cbuffer cbOBBDebugData : register(b5)
+cbuffer cbOBBDebugData : register(b7)
 {
     float3 gvOBBCenter;
     float3 gvOBBExtent;

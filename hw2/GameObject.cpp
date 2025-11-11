@@ -51,10 +51,14 @@ void GameObject::SetChild(std::shared_ptr<GameObject> pChild)
 	}
 }
 
+const std::vector<std::shared_ptr<GameObject>>& GameObject::GetChildren()const
+{
+	return m_pChildren;
+}
+
 void GameObject::Update(float fTimeElapsed)
 {
 	Animate(fTimeElapsed);
-
 	UpdateTransform(nullptr);
 }
 
@@ -73,10 +77,10 @@ void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 		XMFLOAT4 xmf4DebugColor(0.f, 1.f, 0.f, 1.f);
 
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 3, &m_xmOBBInWorld.Center, 0);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 3, &m_xmOBBInWorld.Extents, 4);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 4, &m_xmOBBInWorld.Orientation, 8);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 4, &xmf4DebugColor, 12);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &m_xmOBBInWorld.Center, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &m_xmOBBInWorld.Extents, 4);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &m_xmOBBInWorld.Orientation, 8);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmf4DebugColor, 12);
 
 		// Draw
 		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
@@ -97,10 +101,10 @@ void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 		XMFLOAT4 xmf4DebugColor(1.f, 0.f, 0.f, 1.f);
 
 		BoundingOrientedBox xmOBB = m_pMesh->GetOBB();
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 3, &xmOBB.Center, 0);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 3, &xmOBB.Extents, 4);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 4, &xmOBB.Orientation, 8);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(5, 4, &xmf4DebugColor, 12);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Center, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Extents, 4);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmOBB.Orientation, 8);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmf4DebugColor, 12);
 
 		// Draw
 		pd3dCommandList->SetGraphicsRootSignature(RenderManager::g_pd3dRootSignature.Get());
@@ -223,9 +227,6 @@ void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 {
 	m_xmf4x4World = (pxmf4x4Parent) ? Matrix4x4::Multiply(m_xmf4x4Transform, *pxmf4x4Parent) : m_xmf4x4Transform;
 
-	if (m_pMesh) {
-		m_pMesh->UpdateOBB(m_xmf4x4World);
-	}
 
 	if (!m_pParent) {
 		m_xmOBB.Transform(m_xmOBBInWorld, XMLoadFloat4x4(&m_xmf4x4World));

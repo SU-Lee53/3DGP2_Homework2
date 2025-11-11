@@ -272,6 +272,11 @@ namespace Matrix4x4
 		XMStoreFloat4x4(&xmmtx4x4Result, XMMatrixLookAtLH(XMLoadFloat3(&xmf3EyePosition), XMLoadFloat3(&xmf3LookAtPosition), XMLoadFloat3(&xmf3UpDirection)));
 		return(xmmtx4x4Result);
 	}
+
+	inline XMFLOAT3 GetLook(const XMFLOAT4X4& xmmtx4x4Matrix)
+	{
+		return(Vector3::Normalize(XMFLOAT3(xmmtx4x4Matrix._31, xmmtx4x4Matrix._32, xmmtx4x4Matrix._33)));
+	}
 }
 
 namespace Triangle

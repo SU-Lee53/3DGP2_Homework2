@@ -102,7 +102,7 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	m_pPlayer->SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
 	m_pPlayer->SetMaxVelocityXZ(125.5f);
 	m_pPlayer->SetMaxVelocityY(140.0f);
-	m_pPlayer->SetPosition(XMFLOAT3(1500.f, 1000.0f, 1500.0f));
+	m_pPlayer->SetPosition(XMFLOAT3(3500.f, 1000.0f, 3500.0f));
 
 	XMFLOAT3 xmf3Scale(18.0f, 4.0f, 18.0f);
 	XMFLOAT4 xmf4Color(0.0f, 0.5f, 0.0f, 0.0f);
@@ -180,7 +180,7 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 
 		// Building
 		{
-			float fWidth = 100.f;
+			float fWidth = 150.f;
 			float fLength = 120.f;
 			float fHeight = 300.f;
 

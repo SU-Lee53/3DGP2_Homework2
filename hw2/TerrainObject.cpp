@@ -175,6 +175,7 @@ void TerrainObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 	m_pMaterials.push_back(pTerrainMaterial);
 
 	m_TerrainCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
+	m_TerrainOnMirrorCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
 
 	CreateChildWaterGridObject(pd3dDevice, pd3dCommandList, nWidth, nLength, nBlockWidth, nBlockLength, xmf3Scale, xmf4Color);
 	m_pChildTerrain = static_pointer_cast<TerrainObject>(m_pChildren[0]);
@@ -223,6 +224,7 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 
 	pWaterGridObject->SetName("WaterGridFrame");
 	pWaterGridObject->m_TerrainCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
+	pWaterGridObject->m_TerrainOnMirrorCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
 
 	XMStoreFloat4x4(&pWaterGridObject->m_xmf4x4Transform, XMMatrixTranslation(0.f, m_fWaterHeight, 0.f));
 
@@ -232,6 +234,7 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 void TerrainObject::CreateBillboards(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, const std::string& strFileName)
 {
 	m_BillboardCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_BILLBOARD_DATA>::value, true);
+	m_BillboardOnMirrorCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_BILLBOARD_DATA>::value, true);
 	std::shared_ptr<RawFormatImage> pObjectMapRaw = make_shared<RawFormatImage>(strFileName, m_nWidth, m_nLength, true);
 
 	// 맵 전체에 100개를 뿌린다
@@ -311,18 +314,19 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 		// Terrain Data + BillboardData + Billboard 3개
 
 		// Color + nType
-		m_pMaterials[0]->UpdateShaderVariable(pd3dCommandList, 1);
+		m_pMaterials[0]->UpdateShaderVariable(pd3dCommandList);
 		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
 			m_pMaterials[0]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+		refDescHandle.cpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// 원래 WorldMatrix 도 걸려야하지만 StructuredBuffer 로 넘기므로 descriptor 만 그냥 증가시킴 (2 * ...)
 
 		// Textures
 		m_pMaterials[0]->CopyTextureDescriptors(pd3dDevice, refDescHandle);
 
 		// Descriptor Set
 		pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
-		refDescHandle.gpuHandle.ptr += (1 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
-		// 1 (CB_MATERIAL_DATA) + Texture 7개 
+		refDescHandle.gpuHandle.ptr += (2 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// 2 (CB_MATERIAL_DATA, World) + Texture 7개 
 	}
 
 	if (m_pTerrainMeshes.size() >= 1)
@@ -349,6 +353,89 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 
 }
 
+void TerrainObject::RenderOnMirror(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane, ComPtr<ID3D12PipelineState> pd3dTerrainOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dBillboardsOnMirrorPipelineState)
+{
+	XMMATRIX xmmtxReflect = XMMatrixReflect(XMLoadFloat4(&xmf4MirrorPlane));
+
+	UINT nBillboardsToDraw = 0;
+	if ((m_pMaterials.size() == 1) && (m_pMaterials[0]))
+	{
+		// Terrain Data
+		CB_TERRAIN_DATA terrainData;
+		{
+			XMStoreFloat4x4(&terrainData.xmf4x4TerrainWorld, XMMatrixTranspose(XMMatrixMultiply(XMLoadFloat4x4(&m_xmf4x4World), xmmtxReflect)));
+			terrainData.xmf2UVTranslation = m_xmf2UVTranslation;
+		}
+		m_TerrainOnMirrorCBuffer.UpdateData(&terrainData);
+
+		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_TerrainOnMirrorCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+		// Billboard Data & Texture
+		// 이번에는 절두체 컬링을 수행하지 않고 거울에 대해서 수행함
+		nBillboardsToDraw = UpdateBillboardDataInMirror(xmf4MirrorPlane);
+		if (nBillboardsToDraw != 0) {
+			pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_BillboardOnMirrorCBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+
+			// Billboard Textures
+			for (int i = 0; i < m_pBillboardTextures.size(); ++i) {
+				pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle, m_pBillboardTextures[i]->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+				refDescHandle.cpuHandle.ptr += 1 * GameFramework::g_uiDescriptorHandleIncrementSize;
+			}
+		}
+		else {
+			// 그릴것이 없어도 Offset 은 일단 옮긴다
+			refDescHandle.cpuHandle.ptr += (1 + m_pBillboardTextures.size()) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		}
+
+		// Data set
+		pd3dCommandList->SetGraphicsRootDescriptorTable(2, refDescHandle.gpuHandle);
+		refDescHandle.gpuHandle.ptr += (2 + 3) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// Terrain Data + BillboardData + Billboard 3개
+
+		// Color + nType
+		m_pMaterials[0]->UpdateShaderVariable(pd3dCommandList);
+		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
+			m_pMaterials[0]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		refDescHandle.cpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// 원래 WorldMatrix 도 걸려야하지만 StructuredBuffer 로 넘기므로 descriptor 만 그냥 증가시킴 (2 * ...)
+
+		// Textures
+		m_pMaterials[0]->CopyTextureDescriptors(pd3dDevice, refDescHandle);
+
+		// Descriptor Set
+		pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
+		refDescHandle.gpuHandle.ptr += (2 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
+		// 2 (CB_MATERIAL_DATA, World) + Texture 7개 
+	}
+
+	pd3dCommandList->SetPipelineState(pd3dTerrainOnMirrorPipelineState.Get());
+	pd3dCommandList->OMSetStencilRef(255);
+
+	if (m_pTerrainMeshes.size() >= 1)
+	{
+		for (int i = 0; i < m_pTerrainMeshes.size(); i++)
+		{
+			if (m_pTerrainMeshes[i]) m_pTerrainMeshes[i]->Render(pd3dCommandList, 0);
+		}
+	}
+
+	// Draw Billboard
+	pd3dCommandList->SetPipelineState(pd3dBillboardsOnMirrorPipelineState.Get());
+	pd3dCommandList->OMSetStencilRef(255);
+
+	if (nBillboardsToDraw != 0) {
+		pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+		pd3dCommandList->DrawInstanced(nBillboardsToDraw, 1, 0, 0);
+	}
+
+	for (auto& pChild : m_pChildren) {
+		static_pointer_cast<TerrainObject>(pChild)->RenderOnMirror(pd3dDevice, pd3dCommandList, refDescHandle, xmf4MirrorPlane, pd3dTerrainOnMirrorPipelineState, pd3dBillboardsOnMirrorPipelineState);
+	}
+
+}
+
 UINT TerrainObject::UpdateBillboardData()
 {
 	// 절두체 컬링 수행
@@ -360,7 +447,6 @@ UINT TerrainObject::UpdateBillboardData()
 		if (pCamera->IsInFrustum(m_Billboards[i].xmf3Position)) {
 			billboardsInCamera.push_back(m_Billboards[i]);
 		}
-		//billboardsInCamera.push_back(m_Billboards[i]);
 	}
 
 	if (billboardsInCamera.size() != 0) {
@@ -370,4 +456,28 @@ UINT TerrainObject::UpdateBillboardData()
 	}
 
 	return billboardsInCamera.size();
+}
+
+UINT TerrainObject::UpdateBillboardDataInMirror(const XMFLOAT4& xmf4MirrorPlane)
+{
+	XMMATRIX xmmtxReflect = XMMatrixReflect(XMLoadFloat4(&xmf4MirrorPlane));
+	std::vector<BillboardParameters> billboardsInMirror;
+
+	for (int i = 0; i < m_Billboards.size(); ++i) {
+		XMVECTOR xmvInstancePosition = XMLoadFloat3(&m_Billboards[i].xmf3Position);
+		float fDistance = XMVectorGetX(XMPlaneDotCoord(XMPlaneNormalize(XMLoadFloat4(&xmf4MirrorPlane)), xmvInstancePosition));
+		if (fDistance > 0.f) {
+			BillboardParameters billboardParam = m_Billboards[i];
+			XMStoreFloat3(&billboardParam.xmf3Position, XMVector3TransformCoord(XMLoadFloat3(&billboardParam.xmf3Position), xmmtxReflect));
+			billboardsInMirror.push_back(billboardParam);
+		}
+	}
+
+	if (billboardsInMirror.size() != 0) {
+		CB_BILLBOARD_DATA billboardData;
+		memcpy(billboardData.billboardData, billboardsInMirror.data(), billboardsInMirror.size() * sizeof(BillboardParameters));
+		m_BillboardOnMirrorCBuffer.UpdateData(&billboardData);
+	}
+
+	return billboardsInMirror.size();
 }

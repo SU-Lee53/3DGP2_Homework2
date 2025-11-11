@@ -56,7 +56,8 @@ public:
 	void SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const;
 
 public:
-	void RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane);
+	void RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, 
+		const XMFLOAT4& xmf4MirrorPlane, ComPtr<ID3D12PipelineState> pd3dObjectsOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dTerrainOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dBillboardsOnMirrorPipelineState);
 
 private:
 	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
@@ -65,11 +66,18 @@ private:
 
 	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 
+private:
+	void FilterObjectsInSceneBehindMirror(const XMFLOAT4& xmf4MirrorPlane);
+	void AddInMirrorSpace(std::shared_ptr<GameObject> pGameObject, const XMFLOAT4& xmf4MirrorPlane);
 
 private:
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceDatas;
 	UINT m_nInstanceIndex = 0;
+	
+	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceInMirrorIndexMap;
+	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceInMirrorDatas;
+	UINT m_nInstanceInMirrorIndex = 0;
 
 	std::vector<std::shared_ptr<MirrorObject>> m_pMirrorObjects;
 
@@ -80,6 +88,7 @@ private:
 	DescriptorHandle				m_DescriptorHandle;
 
 	StructuredBuffer				m_InstanceDataSBuffer;
+	StructuredBuffer				m_InstanceDataOnMirrorSBuffer;
 
 	UINT m_nDrawCalls = 0;
 

@@ -75,7 +75,10 @@ public:
 	void UpdateShaderVariables(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void Update(float fTimeElapsed) override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	void RenderOnMirror(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle,
+		const XMFLOAT4& xmf4MirrorPlane, ComPtr<ID3D12PipelineState> pd3dTerrainOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dBillboardsOnMirrorPipelineState);
 	UINT UpdateBillboardData();
+	UINT UpdateBillboardDataInMirror(const XMFLOAT4& xmf4MirrorPlane);
 
 
 public:
@@ -87,8 +90,8 @@ public:
 
 	XMFLOAT3 GetScale() { return m_xmf3Scale; }
 
-	float GetWidth() { return m_nWidth * m_xmf3Scale.x; }
-	float GetLength() { return m_nLength * m_xmf3Scale.z; }
+	float GetWidth() { return m_nWidth * (m_xmf3Scale.x - 1); }
+	float GetLength() { return m_nLength * (m_xmf3Scale.z - 1); }
 	float GetWaterHeight() { return m_fWaterHeight; }
 
 	std::array<XMFLOAT4, 4>& GetWallPlanes() { return m_xmf4MapBoundaryPlanes; }
@@ -115,5 +118,11 @@ private:
 	std::array<std::shared_ptr<Texture>, 3>		m_pBillboardTextures;
 	std::vector<BillboardParameters>			m_Billboards;
 	ConstantBuffer								m_BillboardCBuffer;
+
+	// Mirror CBuffer
+	ConstantBuffer								m_TerrainOnMirrorCBuffer;
+	ConstantBuffer								m_BillboardOnMirrorCBuffer;
+
+
 };
 

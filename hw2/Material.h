@@ -30,8 +30,6 @@ struct CB_MATERIAL_DATA {
 	XMFLOAT4 xmf4Specular;
 	XMFLOAT4 xmf4Emissive;
 	UINT nMaterialType;
-
-	int nBaseIndex;
 };
 
 class Material {
@@ -45,11 +43,11 @@ public:
 	void SetShader(std::shared_ptr<Shader> pShader) { m_pShader = pShader; }
 	const std::shared_ptr<Shader>& GetShader() const { return m_pShader; }
 
-	void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nInstanceBase);
+	void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	void CopyTextureDescriptors(ComPtr<ID3D12Device> pd3dCommandList, DescriptorHandle& descHandle);
 	void SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex);
 
-	void OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	void OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nPipelineIndex = 0);
 
 	const ConstantBuffer& GetCBuffer() const { return m_MaterialCBuffer; }
 

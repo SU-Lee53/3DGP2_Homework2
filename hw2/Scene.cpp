@@ -232,3 +232,8 @@ std::shared_ptr<Player> Scene::GetPlayer() const
 {
 	return m_pPlayer;
 }
+
+const std::vector<std::shared_ptr<GameObject>>& Scene::GetGameObjects() const
+{
+	return m_pGameObjects;
+}

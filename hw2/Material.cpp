@@ -18,7 +18,7 @@ void Material::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsComm
 	m_MaterialCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_MATERIAL_DATA>::value, true);
 }
 
-void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nInstanceBase)
+void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	CB_MATERIAL_DATA cbData{};
 	{
@@ -27,7 +27,6 @@ void Material::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dComman
 		cbData.xmf4Specular = m_xmf4SpecularColor;
 		cbData.xmf4Emissive = m_xmf4EmissiveColor;
 		cbData.nMaterialType = m_nType;
-		cbData.nBaseIndex = nInstanceBase;
 	}
 	m_MaterialCBuffer.UpdateData(&cbData);
 }
@@ -47,9 +46,9 @@ void Material::SetMaterialToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dComma
 	m_MaterialCBuffer.SetBufferToPipeline(pd3dCommandList, uiRootParameterIndex);
 }
 
-void Material::OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
+void Material::OnPrepareRender(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nPipelineIndex)
 {
-	m_pShader->OnPrepareRender(pd3dCommandList);
+	m_pShader->OnPrepareRender(pd3dCommandList, nPipelineIndex);
 }
 
 void Material::SetTexture(UINT nTextureIndex, std::shared_ptr<Texture> pTexture)

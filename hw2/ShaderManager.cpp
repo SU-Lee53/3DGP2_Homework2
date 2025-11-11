@@ -15,4 +15,5 @@ void ShaderManager::Initialize()
 	Load<StandardShader>();
 	Load<TerrainShader>();
 	Load<OBBDebugShader>();
+	Load<MirrorShader>();
 }

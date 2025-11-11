@@ -13,17 +13,12 @@ RenderManager::RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 {
 	m_pd3dDevice = pd3dDevice;
 
-#ifdef INSTANCING_USING_DESCRIPTOR_TABLE
 	m_InstanceDataSBuffer.Create(pd3dDevice, pd3dCommandList, ASSUMED_REQUIRED_STRUCTURED_BUFFER_SIZE, sizeof(INSTANCE_DATA), true);
+	m_InstanceDataOnMirrorSBuffer.Create(pd3dDevice, pd3dCommandList, ASSUMED_REQUIRED_STRUCTURED_BUFFER_SIZE, sizeof(INSTANCE_DATA), true);
 
-#else
-	m_InstanceDataSBuffer.Create(pd3dDevice, pd3dCommandList, ASSUMED_INSTANCE_COUNT, sizeof(INSTANCE_DATA), false);
-
-#endif
-	 
 	D3D12_DESCRIPTOR_HEAP_DESC heapDesc{};
 	heapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-	heapDesc.NumDescriptors = 10000;
+	heapDesc.NumDescriptors = 50000;
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 	heapDesc.NodeMask = 0;
 
@@ -97,24 +92,19 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 	RenderObjects(pd3dCommandList, descHandle);
 
-	
-
 	// TODO 추가
 	// RenderTerrain
 	if (m_pTerrain) {
 		RenderTerrain(pd3dCommandList, descHandle);
 	}
-	// RenderSkybox
+	// RenderSkybox()
+
+	RenderMirrors(pd3dCommandList, descHandle);
 }
 
 void RenderManager::SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const
 {
 	pd3dCommandList->SetDescriptorHeaps(1, m_pd3dDescriptorHeap.GetAddressOf());
-}
-
-void RenderManager::RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane)
-{
-	// TODO : Make it Happen
 }
 
 void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
@@ -143,18 +133,21 @@ void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandL
 
 		for (int i = 0; i < instanceKey.pMaterials.size(); ++i) {
 			// Color + nType
-			instanceKey.pMaterials[i]->UpdateShaderVariable(pd3dCommandList, nInstanceBase);
+			instanceKey.pMaterials[i]->UpdateShaderVariable(pd3dCommandList);
 			m_pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
 				instanceKey.pMaterials[i]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-			refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+			refDescHandle.cpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
+			// 원래 WorldMatrix 도 걸려야하지만 StructuredBuffer 로 넘기므로 descriptor 만 그냥 증가시킴 (2 * ...)
 
 			// Textures
 			instanceKey.pMaterials[i]->CopyTextureDescriptors(m_pd3dDevice, refDescHandle);
 
 			// Descriptor Set
 			pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
-			refDescHandle.gpuHandle.ptr += (1 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
-			// 1 (CB_MATERIAL_DATA) + Texture 7개 
+			refDescHandle.gpuHandle.ptr += (2 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
+			// 2 (CB_MATERIAL_DATA, World) + Texture 7개 
+
+			pd3dCommandList->SetGraphicsRoot32BitConstant(5, nInstanceBase, 0);
 
 			instanceKey.pMaterials[i]->OnPrepareRender(pd3dCommandList);
 			instanceKey.pMesh->Render(pd3dCommandList, i, nInstanceCount);
@@ -165,6 +158,66 @@ void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandL
 
 }
 
+void RenderManager::RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane, ComPtr<ID3D12PipelineState> pd3dObjectsOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dTerrainOnMirrorPipelineState, ComPtr<ID3D12PipelineState> pd3dBillboardsOnMirrorPipelineState)
+{
+	FilterObjectsInSceneBehindMirror(xmf4MirrorPlane);
+
+	// 월드 행렬을 거울 기준으로 반사시킴
+	UINT uiSBufferOffset = 0;
+	for (auto&& [instanceKey, instanceData] : m_InstanceInMirrorDatas) {
+		m_InstanceDataOnMirrorSBuffer.UpdateData(instanceData, uiSBufferOffset);
+		uiSBufferOffset += instanceData.size();
+	}
+#ifdef WITH_UPLOAD_BUFFER
+	m_InstanceInMirrorDatasBuffer.UpdateResources(m_pd3dDevice, pd3dCommandList);
+
+#endif
+
+	m_pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
+		m_InstanceDataOnMirrorSBuffer.GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	refDescHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	pd3dCommandList->SetGraphicsRootDescriptorTable(3, refDescHandle.gpuHandle);
+	refDescHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+	int nInstanceBase = 0;
+	int nInstanceCount = 0;
+	for (auto& [instanceKey, instanceData] : m_InstanceInMirrorDatas) {
+		nInstanceCount = instanceData.size();
+		if (nInstanceCount == 0) {
+			continue;
+		}
+
+		for (int i = 0; i < instanceKey.pMaterials.size(); ++i) {
+			// Color + nType
+			instanceKey.pMaterials[i]->UpdateShaderVariable(pd3dCommandList);
+			m_pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,
+				instanceKey.pMaterials[i]->GetCBuffer().GetCPUDescriptorHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+			refDescHandle.cpuHandle.ptr += 2 * GameFramework::g_uiDescriptorHandleIncrementSize;
+			// 원래 WorldMatrix 도 걸려야하지만 StructuredBuffer 로 넘기므로 descriptor 만 그냥 증가시킴 (2 * ...)
+
+			// Textures
+			instanceKey.pMaterials[i]->CopyTextureDescriptors(m_pd3dDevice, refDescHandle);
+
+			// Descriptor Set
+			pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
+			refDescHandle.gpuHandle.ptr += (2 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
+			// 2 (CB_MATERIAL_DATA, World) + Texture 7개 
+
+			pd3dCommandList->SetGraphicsRoot32BitConstant(5, nInstanceBase, 0);
+
+			pd3dCommandList->SetPipelineState(pd3dObjectsOnMirrorPipelineState.Get());
+			pd3dCommandList->OMSetStencilRef(255);
+			instanceKey.pMesh->Render(pd3dCommandList, i, nInstanceCount);
+		}
+
+		nInstanceBase += nInstanceCount;
+	}
+
+	// Terrain 도 반사해서 그림
+	m_pTerrain->RenderOnMirror(m_pd3dDevice, pd3dCommandList, refDescHandle, xmf4MirrorPlane, pd3dTerrainOnMirrorPipelineState, pd3dBillboardsOnMirrorPipelineState);
+}
+
 void RenderManager::RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
 {
 	m_pTerrain->Render(m_pd3dDevice, pd3dCommandList, refDescHandle);
@@ -172,13 +225,22 @@ void RenderManager::RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandL
 
 void RenderManager::RenderMirrors(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
 {
-	// 그리기 전에 카메라 거리 기준 먼것부터 정렬 필요
-	XMFLOAT3 xmf3CameraPosition = CUR_SCENE->GetCamera()->GetPosition();
-	XMVECTOR xmv; // 11.11 TODO : 여기부터
-	std::sort(m_pMirrorObjects.begin(), m_pMirrorObjects.end(), [&xmf3CameraPosition](const std::shared_ptr<MirrorObject>& lhs, const std::shared_ptr<MirrorObject> rhs) {
+	// 그리기 전에 카메라 거리 기준 먼것부터 정렬 필요 (거리 기준 내림차순)
+	//XMFLOAT3 xmf3CameraPosition = CUR_SCENE->GetCamera()->GetPosition();
+	//XMVECTOR xmvCameraPosition = XMLoadFloat3(&xmf3CameraPosition); // 11.11 TODO : 여기부터
+	//std::sort(m_pMirrorObjects.begin(), m_pMirrorObjects.end(), [&xmvCameraPosition](const std::shared_ptr<MirrorObject>& lhs, const std::shared_ptr<MirrorObject> rhs) {
+	//	XMVECTOR xmvLhsPos = XMLoadFloat3(&lhs->GetPosition());
+	//	XMVECTOR xmvRhsPos = XMLoadFloat3(&rhs->GetPosition());
+	//
+	//	float fLhsDistanceSq = XMVectorGetX(XMVector3LengthSq(XMVectorSubtract(xmvCameraPosition, xmvLhsPos)));
+	//	float fRhsDistanceSq = XMVectorGetX(XMVector3LengthSq(XMVectorSubtract(xmvCameraPosition, xmvRhsPos)));
+	//
+	//	return fLhsDistanceSq > fRhsDistanceSq;
+	//});
 
-
-	});
+	for (auto& pMirror : m_pMirrorObjects) {
+		pMirror->Render(m_pd3dDevice, pd3dCommandList, refDescHandle);
+	}
 }
 
 void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
@@ -193,11 +255,11 @@ void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
 	
 	d3dDescriptorRanges[5].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 4, 0, 0);	// t4 : World 행렬들을 전부 담을 StructuredBuffer
 
-	d3dDescriptorRanges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 4, 0, 0);	// b4 : Material, StructuredBuffer 에서 World 행렬의 위치(Base)
-	d3dDescriptorRanges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 7, 5, 0, 1);	// t5 ~ t11 : 각각 albedo, specular, normal, metallic, emission, detail albedo, detail normal
+	d3dDescriptorRanges[6].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 2, 4, 0, 0);	// b4 : Material, StructuredBuffer 에서 World 행렬의 위치(Base) + b5 World 행렬 (인스턴싱 안하는 경우(Mirror))
+	d3dDescriptorRanges[7].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 7, 5, 0, 2);	// t5 ~ t11 : 각각 albedo, specular, normal, metallic, emission, detail albedo, detail normal
 
 
-	CD3DX12_ROOT_PARAMETER d3dRootParameters[6];
+	CD3DX12_ROOT_PARAMETER d3dRootParameters[7];
 	{
 		// Per Scene
 		d3dRootParameters[0].InitAsDescriptorTable(1, &d3dDescriptorRanges[0], D3D12_SHADER_VISIBILITY_ALL);	// b0, b1
@@ -210,10 +272,13 @@ void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
 		d3dRootParameters[3].InitAsDescriptorTable(1, &d3dDescriptorRanges[5], D3D12_SHADER_VISIBILITY_ALL);	// t8
 
 		// Material
-		d3dRootParameters[4].InitAsDescriptorTable(2, &d3dDescriptorRanges[6], D3D12_SHADER_VISIBILITY_ALL);	// b3 / t9 ~ t15
+		d3dRootParameters[4].InitAsDescriptorTable(2, &d3dDescriptorRanges[6], D3D12_SHADER_VISIBILITY_ALL);	// b4, b5 / t9 ~ t15
+
+		// Instance Base
+		d3dRootParameters[5].InitAsConstants(1, 6, 0, D3D12_SHADER_VISIBILITY_ALL);	// Center + Extent + Orientation + Color
 
 		// 디버그용 OBB 그리기
-		d3dRootParameters[5].InitAsConstants(16, 5, 0, D3D12_SHADER_VISIBILITY_ALL);	// Center + Extent + Orientation + Color
+		d3dRootParameters[6].InitAsConstants(16, 7, 0, D3D12_SHADER_VISIBILITY_ALL);	// Center + Extent + Orientation + Color
 	}
 
 	D3D12_ROOT_SIGNATURE_FLAGS d3dRootSignatureFlags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT
@@ -272,6 +337,45 @@ void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)
 	pd3dDevice->CreateRootSignature(0, pd3dSignatureBlob->GetBufferPointer(), pd3dSignatureBlob->GetBufferSize(), IID_PPV_ARGS(g_pd3dRootSignature.GetAddressOf()));
 }
 
+void RenderManager::FilterObjectsInSceneBehindMirror(const XMFLOAT4& xmf4MirrorPlane)
+{
+	AddInMirrorSpace(CUR_SCENE->GetPlayer(), xmf4MirrorPlane);
+
+	for (const auto& pObj : CUR_SCENE->GetGameObjects()) {
+		AddInMirrorSpace(pObj, xmf4MirrorPlane);
+	}
+}
+
+void RenderManager::AddInMirrorSpace(std::shared_ptr<GameObject> pGameObject, const XMFLOAT4& xmf4MirrorPlane)
+{
+	XMMATRIX xmmtxReflect = XMMatrixReflect(XMLoadFloat4(&xmf4MirrorPlane));
+
+	XMFLOAT3 xmf3InstancePosition = pGameObject->GetPosition();
+	XMVECTOR xmvInstancePosition = XMLoadFloat3(&xmf3InstancePosition);
+	float fDistance = XMVectorGetX(XMPlaneDotCoord(XMPlaneNormalize(XMLoadFloat4(&xmf4MirrorPlane)), xmvInstancePosition));
+	if (fDistance > 0.f && pGameObject->GetMesh()) {
+		INSTANCE_KEY key{ pGameObject->GetMesh(), pGameObject->GetMaterials(), key.pMesh->GetSubSetCount() };
+		XMFLOAT4X4 xmf4x4InstanceData;
+		XMStoreFloat4x4(&xmf4x4InstanceData, XMMatrixTranspose(XMMatrixMultiply(XMLoadFloat4x4(&pGameObject->GetWorldMatrix()), xmmtxReflect)));
+
+		auto it = m_InstanceInMirrorIndexMap.find(key);
+		if (it == m_InstanceInMirrorIndexMap.end()) {
+			m_InstanceInMirrorIndexMap[key] = m_nInstanceInMirrorIndex++;
+			m_InstanceInMirrorDatas.push_back({ key, {} });
+			m_nDrawCalls += key.pMaterials.size();
+
+			m_InstanceInMirrorDatas[m_InstanceInMirrorIndexMap[key]].second.emplace_back(xmf4x4InstanceData);
+		}
+		else {
+			m_InstanceInMirrorDatas[it->second].second.emplace_back(xmf4x4InstanceData);
+		}
+	}
+
+	for (const auto& pChild : pGameObject->GetChildren()) {
+		AddInMirrorSpace(pChild, xmf4MirrorPlane);
+	}
+}
+
 void RenderManager::Clear()
 {
 	m_InstanceIndexMap.clear();
@@ -279,6 +383,11 @@ void RenderManager::Clear()
 	m_nInstanceIndex = 0;
 	m_nDrawCalls = 0;
 
+	m_InstanceInMirrorIndexMap.clear();
+	m_InstanceInMirrorDatas.clear();
+	m_nInstanceInMirrorIndex = 0;
+
+	m_pMirrorObjects.clear();
 }
 
 size_t RenderManager::GetMeshCount() const

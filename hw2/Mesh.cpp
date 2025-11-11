@@ -294,6 +294,7 @@ std::shared_ptr<StandardMesh> StandardMesh::GenerateMirrorMesh(ComPtr<ID3D12Devi
 	*/
 
 	std::shared_ptr<StandardMesh> pMirrorMesh = std::make_shared<StandardMesh>();
+	pMirrorMesh->m_strMeshName = "Mirror";
 	pMirrorMesh->m_nVertices = 6;
 
 	float fHalfWidth = fWidth / 2;

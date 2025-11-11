@@ -53,6 +53,7 @@ public:
 	std::shared_ptr<Camera> GetCamera() const;
 	const ConstantBuffer& GetCBuffer() const { return m_LightCBuffer; }
 	std::shared_ptr<Player> GetPlayer() const;
+	const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const;
 
 protected:
 	std::shared_ptr<Player>						m_pPlayer;

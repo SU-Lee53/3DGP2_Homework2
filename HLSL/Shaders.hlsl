@@ -31,12 +31,14 @@ VS_STANDARD_OUTPUT VSStandard(VS_STANDARD_INPUT input, uint nInstanceID : SV_Ins
 
     matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
 	
-    output.positionW = mul(float4(input.position, 1.f), sbInstanceData[gnBaseIndex + nInstanceID]).xyz;
+    matrix mtxWorld = gnBaseIndex == -1 ? gmtxWorld : sbInstanceData[gnBaseIndex + nInstanceID];
+    
+    output.positionW = mul(float4(input.position, 1.f), mtxWorld).xyz;
     output.position = mul(float4(output.positionW, 1.f), mtxViewProjection);
 	
-    output.normalW = mul(float4(input.normal, 0.f), sbInstanceData[gnBaseIndex + nInstanceID]).xyz;
-    output.tangentW = mul(float4(input.tangent, 0.f), sbInstanceData[gnBaseIndex + nInstanceID]).xyz;
-    output.biTangentW = mul(float4(input.biTangent, 0.f), sbInstanceData[gnBaseIndex + nInstanceID]).xyz;
+    output.normalW = mul(float4(input.normal, 0.f), mtxWorld).xyz;
+    output.tangentW = mul(float4(input.tangent, 0.f), mtxWorld).xyz;
+    output.biTangentW = mul(float4(input.biTangent, 0.f), mtxWorld).xyz;
 	
     output.uv = input.uv;
 	
@@ -57,6 +59,63 @@ float3 ComputeNormal(float3 normalW, float3 tangentW, float2 uv)
 }
 
 float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
+{
+    float4 cAlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float4 cSpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float4 cNormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float4 cMetallicColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float4 cEmissionColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
+
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_ALBEDO_MAP)
+        cAlbedoColor = gtxtAlbedoMap.Sample(gssWrap, input.uv);
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_SPECULAR_MAP)
+        cSpecularColor = gtxtSpecularMap.Sample(gssWrap, input.uv);
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_NORMAL_MAP)
+        cNormalColor = gtxtNormalMap.Sample(gssWrap, input.uv);
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_METALLIC_MAP)
+        cMetallicColor = gtxtMetallicMap.Sample(gssWrap, input.uv);
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_EMISSION_MAP)
+        cEmissionColor = gtxtEmissionMap.Sample(gssWrap, input.uv);
+
+    float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    float4 cColor = cAlbedoColor + cSpecularColor + cEmissionColor;
+    if (gMaterial.m_textureMask & MATERIAL_TYPE_NORMAL_MAP)
+    {
+        float3 normalW = input.normalW;
+        float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.biTangentW), normalize(input.normalW));
+        float3 vNormal = normalize(cNormalColor.rgb * 2.0f - 1.0f); //[0, 1] → [-1, 1]
+        normalW = normalize(mul(vNormal, TBN));
+        cIllumination = Lighting(input.positionW, normalW);
+        cColor = lerp(cColor, cIllumination, 0.5f);
+    }
+
+    return cColor;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Mirror Shader
+// Stencil 버퍼에 그릴때 쓸 쉐이더 -> 하는김에 거울부분의 Depth 도 1로 맞추기 위해 xyww 를 사용
+
+VS_STANDARD_OUTPUT VSMirror(VS_STANDARD_INPUT input, uint nInstanceID : SV_InstanceID)
+{
+    VS_STANDARD_OUTPUT output;
+
+    matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
+	
+    
+    output.positionW = mul(float4(input.position, 1.f), gmtxWorld).xyz;
+    output.position = mul(float4(output.positionW, 1.f), mtxViewProjection).xyww;
+	
+    output.normalW = mul(float4(input.normal, 0.f), gmtxWorld).xyz;
+    output.tangentW = mul(float4(input.tangent, 0.f), gmtxWorld).xyz;
+    output.biTangentW = mul(float4(input.biTangent, 0.f), gmtxWorld).xyz;
+	
+    output.uv = input.uv;
+	
+	return output;
+}
+
+float4 PSMirror(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
     float4 cAlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
     float4 cSpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);

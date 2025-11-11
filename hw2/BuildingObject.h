@@ -12,7 +12,9 @@ public:
 	virtual ~MirrorObject();
 
 public:
-	virtual void Initialize() override;
+	void Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+	virtual void UpdateTransform(XMFLOAT4X4* pxmf4x4Parent = NULL) override;
+
 	virtual void AddToRenderMap() override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
@@ -21,6 +23,8 @@ public:
 private:
 	XMFLOAT4 m_xmf4MirrorPlane;
 	float m_fBlendFactor = 0.f;
+
+	ConstantBuffer m_WorldCBuffer;
 
 };
 
@@ -36,9 +40,6 @@ public:
 protected:
 	std::shared_ptr<GameObject> m_pMainRotorFrame = nullptr;
 	std::shared_ptr<GameObject> m_pTailRotorFrame = nullptr;
-
-
-
 
 };
 
