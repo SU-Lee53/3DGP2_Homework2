@@ -100,6 +100,14 @@ protected:
 	ComPtr<ID3D12Resource>		m_pd3dBiTangentUploadBuffer = nullptr;
 	D3D12_VERTEX_BUFFER_VIEW	m_d3dBiTangentBufferView;
 
+public:
+	static std::shared_ptr<StandardMesh> GenerateMirrorMesh(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
+		float fWidth, float fHeight, int nWindowsInWidth, int nWindowsInHeights);
+	
+	static std::shared_ptr<StandardMesh> GenerateBuildingTopMesh(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, 
+		float fWidth, float fLength);
+
+
 };
 
 class HeightMapRawImage;

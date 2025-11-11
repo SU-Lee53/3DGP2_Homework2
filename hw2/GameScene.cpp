@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "GameScene.h"
 #include "TerrainObject.h"
+#include "BuildingObject.h"
 
 GameScene::GameScene()
 {
@@ -176,6 +177,22 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 				m_pBillboardSprites[i] = std::make_shared<BillboardSprite>(pd3dDevice, pd3dCommandList, "indicator", XMFLOAT3(0.f, 0.f, 0.f), XMFLOAT2(80.f, 80.f));
 			}
 		}
+
+		// Building
+		{
+			float fWidth = 100.f;
+			float fLength = 120.f;
+			float fHeight = 300.f;
+
+			std::shared_ptr<BuildingObject> pBuildingObject = std::make_shared<BuildingObject>();
+			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 20);
+			pBuildingObject->SetPosition(XMFLOAT3(3800.f, 0.f, 3800.f));
+			m_pGameObjects.push_back(pBuildingObject);
+
+
+		}
+
+
 	}
 
 	m_pHPTextSprite = std::make_shared<TextSprite>("", 0.0f, 0.0f, 0.3f, 0.05f, XMFLOAT4(1, 0, 0, 1), 1, true);

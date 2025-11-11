@@ -275,6 +275,201 @@ void StandardMesh::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int
 	}
 }
 
+std::shared_ptr<StandardMesh> StandardMesh::GenerateMirrorMesh(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, float fWidth, float fHeight, int nWindowsInWidth, int nWindowsInHeights)
+{
+	/*                              
+		   0          1	            
+			+--------+              
+			|        |              
+			|        |              +y
+			|        |				 |  +z
+			|        | fHeight		 | /
+			|        |				 |/
+			|        |				 +-------- +x
+			+--------+
+	      2   fWidth   3
+	
+		- 일단 Index 안쓰고 정점 6개로 그리도록 함
+		- 월드 원점에다 만듬. 방향(Normal)은 -Z 방향을 바라봄
+	*/
+
+	std::shared_ptr<StandardMesh> pMirrorMesh = std::make_shared<StandardMesh>();
+	pMirrorMesh->m_nVertices = 6;
+
+	float fHalfWidth = fWidth / 2;
+	float fHalfHeight = fHeight / 2;
+
+	// Position
+	{
+		pMirrorMesh->m_xmf3Positions.resize(6);
+		pMirrorMesh->m_xmf3Positions[0] = XMFLOAT3(-fHalfWidth, +fHalfHeight, 0.f);	// 0
+		pMirrorMesh->m_xmf3Positions[1] = XMFLOAT3(+fHalfWidth, +fHalfHeight, 0.f);	// 1
+		pMirrorMesh->m_xmf3Positions[2] = XMFLOAT3(-fHalfWidth, -fHalfHeight, 0.f);	// 2
+
+		pMirrorMesh->m_xmf3Positions[3] = XMFLOAT3(+fHalfWidth, +fHalfHeight, 0.f);	// 1
+		pMirrorMesh->m_xmf3Positions[4] = XMFLOAT3(+fHalfWidth, -fHalfHeight, 0.f);	// 3
+		pMirrorMesh->m_xmf3Positions[5] = XMFLOAT3(-fHalfWidth, -fHalfHeight, 0.f);	// 2
+
+
+		pMirrorMesh->m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pMirrorMesh->m_xmf3Positions.data(), pMirrorMesh->m_xmf3Positions.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pMirrorMesh->m_pd3dPositionUploadBuffer.GetAddressOf());
+		pMirrorMesh->m_d3dPositionBufferView.BufferLocation = pMirrorMesh->m_pd3dPositionBuffer->GetGPUVirtualAddress();
+		pMirrorMesh->m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pMirrorMesh->m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * pMirrorMesh->m_nVertices;
+	}
+
+
+	// Normal, Tangent, BiTangent
+	{
+		pMirrorMesh->m_xmf3Normals.resize(6);
+		pMirrorMesh->m_xmf3Tangents.resize(6);
+		pMirrorMesh->m_xmf3BiTangents.resize(6);
+		for (int i = 0; i < 6; ++i) {
+			pMirrorMesh->m_xmf3Normals[i] = XMFLOAT3(0.f, 0.f, -1.f);
+			pMirrorMesh->m_xmf3Tangents[i] = XMFLOAT3(1.f, 0.f, 0.f);
+			pMirrorMesh->m_xmf3BiTangents[i] = XMFLOAT3(0.f, 1.f, 0.f);
+		}
+
+
+		pMirrorMesh->m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pMirrorMesh->m_xmf3Normals.data(), pMirrorMesh->m_xmf3Normals.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pMirrorMesh->m_pd3dNormalUploadBuffer.GetAddressOf());
+		pMirrorMesh->m_d3dNormalBufferView.BufferLocation = pMirrorMesh->m_pd3dNormalBuffer->GetGPUVirtualAddress();
+		pMirrorMesh->m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pMirrorMesh->m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * pMirrorMesh->m_nVertices;
+
+		pMirrorMesh->m_pd3dTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pMirrorMesh->m_xmf3Tangents.data(), pMirrorMesh->m_xmf3Tangents.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pMirrorMesh->m_pd3dTangentUploadBuffer.GetAddressOf());
+		pMirrorMesh->m_d3dTangentBufferView.BufferLocation = pMirrorMesh->m_pd3dTangentBuffer->GetGPUVirtualAddress();
+		pMirrorMesh->m_d3dTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pMirrorMesh->m_d3dTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * pMirrorMesh->m_nVertices;
+
+		pMirrorMesh->m_pd3dBiTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pMirrorMesh->m_xmf3BiTangents.data(), pMirrorMesh->m_xmf3BiTangents.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pMirrorMesh->m_pd3dBiTangentUploadBuffer.GetAddressOf());
+		pMirrorMesh->m_d3dBiTangentBufferView.BufferLocation = pMirrorMesh->m_pd3dBiTangentBuffer->GetGPUVirtualAddress();
+		pMirrorMesh->m_d3dBiTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pMirrorMesh->m_d3dBiTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * pMirrorMesh->m_nVertices;
+
+	}
+
+
+	// UV
+	{
+		// UV의 경우 창문 갯수만큼 0 ~ nWindowsIn... 를 해버리면
+		// 0 ~ 1 을 벗어나는 범위에서 Wrap 을 하도록 함
+		// 그러면 창문하나 텍스쳐만 가지고 건물 전체에 바를 수 있음
+
+		pMirrorMesh->m_xmf2TextureCoords0.resize(6);
+		pMirrorMesh->m_xmf2TextureCoords0[0] = XMFLOAT2(0.f, 0.f);						// 0
+		pMirrorMesh->m_xmf2TextureCoords0[1] = XMFLOAT2((float)nWindowsInWidth, 0.f);	// 1
+		pMirrorMesh->m_xmf2TextureCoords0[2] = XMFLOAT2(0.f, (float)nWindowsInHeights);	// 2
+
+		pMirrorMesh->m_xmf2TextureCoords0[3] = XMFLOAT2((float)nWindowsInWidth, 0.f);						// 1
+		pMirrorMesh->m_xmf2TextureCoords0[4] = XMFLOAT2((float)nWindowsInWidth, (float)nWindowsInHeights);	// 3
+		pMirrorMesh->m_xmf2TextureCoords0[5] = XMFLOAT2(0.f, (float)nWindowsInHeights);						// 2
+
+		pMirrorMesh->m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pMirrorMesh->m_xmf2TextureCoords0.data(), pMirrorMesh->m_xmf2TextureCoords0.size() * sizeof(XMFLOAT2),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pMirrorMesh->m_pd3dTextureCoord0UploadBuffer.GetAddressOf());
+		pMirrorMesh->m_d3dTextureCoord0BufferView.BufferLocation = pMirrorMesh->m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
+		pMirrorMesh->m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
+		pMirrorMesh->m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * pMirrorMesh->m_nVertices;
+	}
+
+
+	return pMirrorMesh;
+}
+
+std::shared_ptr<StandardMesh> StandardMesh::GenerateBuildingTopMesh(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, float fWidth, float fLength)
+{
+	std::shared_ptr<StandardMesh> pTopMesh = std::make_shared<StandardMesh>();
+	pTopMesh->m_nVertices = 6;
+
+	float fHalfWidth = fWidth / 2;
+	float fHalfLength = fLength / 2;
+
+	/*
+			 0                       1
+	           +-------------------+             +y
+			  /               	  /  			 |  +z
+			 /				  	 /  fLength		 | /
+	        /				    /				 |/
+		   +-------------------+				 +-------- +x
+		 2        fWidth         3
+
+		- 일단 Index 안쓰고 정점 6개로 그리도록 함
+		- 월드 원점에다 만듬. 방향(Normal)은 +Y 방향을 바라봄
+	*/
+
+	// Position
+	{
+		pTopMesh->m_xmf3Positions.resize(6);
+		pTopMesh->m_xmf3Positions[0] = XMFLOAT3(-fHalfWidth, 0.f, +fHalfLength);	// 0
+		pTopMesh->m_xmf3Positions[1] = XMFLOAT3(+fHalfWidth, 0.f, +fHalfLength);	// 1
+		pTopMesh->m_xmf3Positions[2] = XMFLOAT3(-fHalfWidth, 0.f, -fHalfLength);	// 2
+
+		pTopMesh->m_xmf3Positions[3] = XMFLOAT3(+fHalfWidth, 0.f, +fHalfLength);	// 1
+		pTopMesh->m_xmf3Positions[4] = XMFLOAT3(+fHalfWidth, 0.f, -fHalfLength);	// 3
+		pTopMesh->m_xmf3Positions[5] = XMFLOAT3(-fHalfWidth, 0.f, -fHalfLength);	// 2
+
+		pTopMesh->m_pd3dPositionBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pTopMesh->m_xmf3Positions.data(), pTopMesh->m_xmf3Positions.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pTopMesh->m_pd3dPositionUploadBuffer.GetAddressOf());
+		pTopMesh->m_d3dPositionBufferView.BufferLocation = pTopMesh->m_pd3dPositionBuffer->GetGPUVirtualAddress();
+		pTopMesh->m_d3dPositionBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pTopMesh->m_d3dPositionBufferView.SizeInBytes = sizeof(XMFLOAT3) * pTopMesh->m_nVertices;
+	}
+
+	// Normal, Tangent, BiTangent
+	{
+		pTopMesh->m_xmf3Normals.resize(6);
+		pTopMesh->m_xmf3Tangents.resize(6);
+		pTopMesh->m_xmf3BiTangents.resize(6);
+		for (int i = 0; i < 6; ++i) {
+			pTopMesh->m_xmf3Normals[i] = XMFLOAT3(0.f, 1.f, 0.f);
+			pTopMesh->m_xmf3Tangents[i] = XMFLOAT3(1.f, 0.f, 0.f);
+			pTopMesh->m_xmf3BiTangents[i] = XMFLOAT3(0.f, 0.f, -1.f);
+		}
+
+		pTopMesh->m_pd3dNormalBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pTopMesh->m_xmf3Normals.data(), pTopMesh->m_xmf3Normals.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pTopMesh->m_pd3dNormalUploadBuffer.GetAddressOf());
+		pTopMesh->m_d3dNormalBufferView.BufferLocation = pTopMesh->m_pd3dNormalBuffer->GetGPUVirtualAddress();
+		pTopMesh->m_d3dNormalBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pTopMesh->m_d3dNormalBufferView.SizeInBytes = sizeof(XMFLOAT3) * pTopMesh->m_nVertices;
+
+
+		pTopMesh->m_pd3dTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pTopMesh->m_xmf3Tangents.data(), pTopMesh->m_xmf3Tangents.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pTopMesh->m_pd3dTangentUploadBuffer.GetAddressOf());
+		pTopMesh->m_d3dTangentBufferView.BufferLocation = pTopMesh->m_pd3dTangentBuffer->GetGPUVirtualAddress();
+		pTopMesh->m_d3dTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pTopMesh->m_d3dTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * pTopMesh->m_nVertices;
+
+
+		pTopMesh->m_pd3dBiTangentBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pTopMesh->m_xmf3BiTangents.data(), pTopMesh->m_xmf3BiTangents.size() * sizeof(XMFLOAT3),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pTopMesh->m_pd3dBiTangentUploadBuffer.GetAddressOf());
+		pTopMesh->m_d3dBiTangentBufferView.BufferLocation = pTopMesh->m_pd3dBiTangentBuffer->GetGPUVirtualAddress();
+		pTopMesh->m_d3dBiTangentBufferView.StrideInBytes = sizeof(XMFLOAT3);
+		pTopMesh->m_d3dBiTangentBufferView.SizeInBytes = sizeof(XMFLOAT3) * pTopMesh->m_nVertices;
+	}
+
+	// UV
+	{
+		pTopMesh->m_xmf2TextureCoords0.resize(6);
+		pTopMesh->m_xmf2TextureCoords0[0] = XMFLOAT2(0.f, 0.f);		// 0
+		pTopMesh->m_xmf2TextureCoords0[1] = XMFLOAT2(1.f, 0.f);		// 1
+		pTopMesh->m_xmf2TextureCoords0[2] = XMFLOAT2(0.f, 1.f);		// 2
+
+		pTopMesh->m_xmf2TextureCoords0[3] = XMFLOAT2(1.f, 0.f);		// 1
+		pTopMesh->m_xmf2TextureCoords0[4] = XMFLOAT2(1.f, 1.f);		// 3
+		pTopMesh->m_xmf2TextureCoords0[5] = XMFLOAT2(0.f, 1.f);		// 2
+
+		pTopMesh->m_pd3dTextureCoord0Buffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, pTopMesh->m_xmf2TextureCoords0.data(), pTopMesh->m_xmf2TextureCoords0.size() * sizeof(XMFLOAT2),
+			D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, pTopMesh->m_pd3dTextureCoord0UploadBuffer.GetAddressOf());
+		pTopMesh->m_d3dTextureCoord0BufferView.BufferLocation = pTopMesh->m_pd3dTextureCoord0Buffer->GetGPUVirtualAddress();
+		pTopMesh->m_d3dTextureCoord0BufferView.StrideInBytes = sizeof(XMFLOAT2);
+		pTopMesh->m_d3dTextureCoord0BufferView.SizeInBytes = sizeof(XMFLOAT2) * pTopMesh->m_nVertices;
+	}
+
+	return pTopMesh;
+}
+
 TerrainMesh::TerrainMesh()
 {
 	m_d3dPrimitiveTopology = D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP;

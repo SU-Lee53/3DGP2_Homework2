@@ -126,6 +126,9 @@
     <ClInclude Include="RandomGenerator.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="BuildingObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="hw2.cpp">
@@ -210,6 +213,9 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="RandomGenerator.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="BuildingObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

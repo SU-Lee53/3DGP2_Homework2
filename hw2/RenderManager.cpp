@@ -4,6 +4,7 @@
 #include "StructuredBuffer.h"
 #include "UIManager.h"
 #include "TerrainObject.h"
+#include "BuildingObject.h"	// MirrorObject
 
 ComPtr<ID3D12RootSignature> RenderManager::g_pd3dRootSignature = nullptr;
 bool RenderManager::g_bRenderOBBForDebug = true;
@@ -54,6 +55,16 @@ void RenderManager::Add(std::shared_ptr<GameObject> pGameObject)
 
 }
 
+void RenderManager::AddMirror(std::shared_ptr<MirrorObject> pMirrorObject)
+{
+	// TODO : Make it Happen
+}
+
+void RenderManager::AddTransparent(std::shared_ptr<MirrorObject> pMirrorObject)
+{
+	// TODO : Make it Happen
+}
+
 void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {
 	pd3dCommandList->SetGraphicsRootSignature(g_pd3dRootSignature.Get());
@@ -97,6 +108,11 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 void RenderManager::SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const
 {
 	pd3dCommandList->SetDescriptorHeaps(1, m_pd3dDescriptorHeap.GetAddressOf());
+}
+
+void RenderManager::RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane)
+{
+	// TODO : Make it Happen
 }
 
 void RenderManager::RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)

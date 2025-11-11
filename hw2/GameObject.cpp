@@ -36,6 +36,9 @@ void GameObject::SetShader(int nMaterial, std::shared_ptr<Shader> pShader)
 
 void GameObject::SetMaterial(int nMaterial, std::shared_ptr<Material> pMaterial)
 {
+	if (nMaterial >= m_pMaterials.size()) {
+		m_pMaterials.resize(nMaterial + 1);
+	}
 	m_pMaterials[nMaterial] = pMaterial;
 }
 

@@ -44,6 +44,18 @@ protected:
 
 };
 
+class MirrorShader : public Shader {
+public:
+	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;
+
+protected:
+	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout() override;
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader() override;
+
+};
+
 class TerrainShader : public Shader {
 public:
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;

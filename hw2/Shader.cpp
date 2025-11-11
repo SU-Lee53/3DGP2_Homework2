@@ -254,6 +254,43 @@ D3D12_SHADER_BYTECODE StandardShader::CreatePixelShader()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// MirrorShader
+
+void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
+{
+	// 총 4개의 파이프라인
+	// (거울 뒷면 필요없을듯 건물이 통으로 유리라 뒷면 볼일이 없음)
+	// 1. 월드의 객체들을 그림
+	// 2. 거울을 스텐실 버퍼에 그림
+	// 3. 거울에 반사된 객체들을 그림
+	// 4. 거울을 블렌딩해서 그림
+	// 이중 1, 4 는 원래의 StandardShader 로도 가능
+	// 따라서, 여기서는 2, 4 에 대한 파이프라인을 만든다 <- 진짜 그래도 되는지는 해보고 결정
+
+	// 11.11
+	// TODO : 여기부터 시작
+	m_pd3dPipelineStates.resize(3);
+
+
+
+}
+
+D3D12_INPUT_LAYOUT_DESC MirrorShader::CreateInputLayout()
+{
+	return D3D12_INPUT_LAYOUT_DESC();
+}
+
+D3D12_SHADER_BYTECODE MirrorShader::CreateVertexShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
+D3D12_SHADER_BYTECODE MirrorShader::CreatePixelShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // TerrainShader
 
 void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)

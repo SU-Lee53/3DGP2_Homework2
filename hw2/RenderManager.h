@@ -35,11 +35,16 @@ struct std::hash<INSTANCE_KEY> {
 	}
 };
 
+class MirrorObject;
+
 class RenderManager {
 public:
 	RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
 	void Add(std::shared_ptr<GameObject> pGameObject);
+	void AddMirror(std::shared_ptr<MirrorObject> pMirrorObject);
+	void AddTransparent(std::shared_ptr<MirrorObject> pMirrorObject);
+
 	void Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	void Clear();
 
@@ -49,6 +54,9 @@ public:
 	UINT GetDrawCallCount() const { return m_nDrawCalls; };
 	ComPtr<ID3D12DescriptorHeap> GetDescriptorHeap() { return m_pd3dDescriptorHeap; }
 	void SetDescriptorHeapToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) const;
+
+public:
+	void RenderObjectsInMirrorWorld(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle, const XMFLOAT4& xmf4MirrorPlane);
 
 private:
 	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
@@ -61,6 +69,8 @@ private:
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceDatas;
 	UINT m_nInstanceIndex = 0;
+
+	std::vector<std::shared_ptr<MirrorObject>> m_pMirrorObjects;
 
 	std::shared_ptr<class TerrainObject>	m_pTerrain;
 	
