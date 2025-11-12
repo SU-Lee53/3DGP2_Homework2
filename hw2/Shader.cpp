@@ -352,7 +352,7 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
 		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
 		d3dPipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-		d3dPipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
+		d3dPipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 		d3dPipelineDesc.DepthStencilState.StencilEnable = true;
 		d3dPipelineDesc.DepthStencilState.StencilReadMask = 0xFF;
 		d3dPipelineDesc.DepthStencilState.StencilWriteMask = 0xFF;

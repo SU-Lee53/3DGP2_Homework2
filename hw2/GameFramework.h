@@ -62,6 +62,8 @@ private:
 	void CreateRenderTargetViews();
 	void CreateDepthStencilView();
 
+
+
 private:
 	void WaitForGPUComplete();
 
@@ -82,7 +84,7 @@ public:
 
 	const static UINT g_nSwapChainBuffers = 2;
 
-public:
+private:
 
 	// DXGI
 	ComPtr<IDXGIFactory4>	m_pdxgiFactory;
@@ -101,7 +103,7 @@ public:
 	UINT								m_nRtvDescriptorIncrementSize;
 
 	ComPtr<ID3D12Resource>				m_pd3dDepthStencilBuffer = NULL;
-	static ComPtr<ID3D12DescriptorHeap>		g_pd3dDsvDescriptorHeap;
+	ComPtr<ID3D12DescriptorHeap>		m_pd3dDsvDescriptorHeap = NULL;
 	UINT								m_nDsvDescriptorIncrementSize;
 
 	// Command List + Allocator

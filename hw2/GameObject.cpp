@@ -227,6 +227,9 @@ void GameObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 {
 	m_xmf4x4World = (pxmf4x4Parent) ? Matrix4x4::Multiply(m_xmf4x4Transform, *pxmf4x4Parent) : m_xmf4x4Transform;
 
+	if (m_pMesh) {
+		m_pMesh->UpdateOBB(m_xmf4x4World);
+	}
 
 	if (!m_pParent) {
 		m_xmOBB.Transform(m_xmOBBInWorld, XMLoadFloat4x4(&m_xmf4x4World));

@@ -91,9 +91,6 @@ void MirrorObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphics
 
 
 	// 4. 거울에 반사된 객체들을 그린다.
-	// 그전에 Depth Buffer 를 한번 날려줘야 하지만 거울이 현재 벽면에 달린게 아니고 통으로 유리이므로 한번 안해보는건 어떨까 -> 안됨. Terrain 이 가려짐
-	//pd3dCommandList->ClearDepthStencilView(GameFramework::g_pd3dDsvDescriptorHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.f, 0.f, 0, NULL);
-
 	{
 		// pipeline[2], [3], [4] : 거울 뒷면 객체 / Terrain / Billboard 를 그림
 		RENDER->RenderObjectsInMirrorWorld(pd3dCommandList, refDescHandle, m_xmf4MirrorPlane, m_pMaterials[0]->GetShader()->GetPipelineState(2), m_pMaterials[0]->GetShader()->GetPipelineState(3), m_pMaterials[0]->GetShader()->GetPipelineState(4));
