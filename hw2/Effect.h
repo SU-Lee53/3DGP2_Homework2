@@ -29,6 +29,13 @@ public:
 	bool IsEnd() const;
 
 protected:
+	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr);
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader();
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader();
+
+protected:
 	ComPtr<ID3D12Resource> m_pd3dParticleBuffer;
 	ComPtr<ID3D12Resource> m_pd3dParticleUploadBuffer;
 
@@ -46,6 +53,9 @@ class ExplosionEffect : public Effect {
 public:
 	ExplosionEffect() {}
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles) override;
+
+protected:
+	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr)
 
 private:
 
