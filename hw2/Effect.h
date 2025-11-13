@@ -23,6 +23,10 @@ public:
 	Effect() {}
 
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles) {}
+	void Update(float fElapsedTime);
+	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+
+	bool IsEnd() const;
 
 protected:
 	ComPtr<ID3D12Resource> m_pd3dParticleBuffer;
@@ -32,6 +36,9 @@ protected:
 	D3D12_VERTEX_BUFFER_VIEW d3dVertexBufferView;
 
 	float m_fTotalLifetime = 0.f;
+	float m_fElapsedtime = 0.f;
+
+	bool m_bLoop = false;
 
 };
 
