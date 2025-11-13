@@ -101,9 +101,9 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
         float fOneMinusTime = 1 - frac(fElapsedTime / input[0].lifeTime); // 1 ~ 0
     
         // 새로운 위치의 계산
-        float fForceX = vForce.x + (gvGravity.x * 20.f) * input[0].mass;
-        float fForceY = vForce.y + (gvGravity.y * 20.f) * input[0].mass;
-        float fForceZ = vForce.z + (gvGravity.z * 20.f) * input[0].mass;
+        float fForceX = vForce.x + (gvGravity.x * 40.f) * input[0].mass;
+        float fForceY = vForce.y + (gvGravity.y * 40.f) * input[0].mass;
+        float fForceZ = vForce.z + (gvGravity.z * 40.f) * input[0].mass;
     
         // F = ma -> a = F / m
         float fAccX = fForceX / input[0].mass;
@@ -112,15 +112,19 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
     
         // s = v0t * 1/2at^2
         float3 initialDirection = normalize(input[0].initialVelocity);
-        float dX = (initialDirection.x * (input[0].randomValue * 250.f) * fNewTime) + (0.5 * fAccX * fNewTimeSq);
-        float dY = (initialDirection.y * (input[0].randomValue * 250.f) * fNewTime) + (0.5 * fAccY * fNewTimeSq);
-        float dZ = (initialDirection.z * (input[0].randomValue * 250.f) * fNewTime) + (0.5 * fAccZ * fNewTimeSq);
+        float dX = (initialDirection.x * input[0].randomValue * fNewTime) + (0.5 * fAccX * fNewTimeSq);
+        float dY = (initialDirection.y * input[0].randomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
+        float dZ = (initialDirection.z * input[0].randomValue * fNewTime) + (0.5 * fAccZ * fNewTimeSq);
     
         vNewPosition += float3(dX, dY, dZ);
     
         // 알파값 계산 -> 시간이 지날수록 투명
+        // 1 ~ 0 으로 변하는 값을 이용하여 잔해가 타서 점점 검어지는것도 표현 가능할 듯
         fNewAlpha = 1 - frac(fElapsedTime / input[0].lifeTime); // 1 ~ 0
-        cNewColor = float4(input[0].color.xyz, fNewAlpha);
+        cNewColor.r = input[0].color.r * fNewAlpha;
+        cNewColor.g = input[0].color.g * fNewAlpha;
+        cNewColor.b = input[0].color.b * fNewAlpha;
+        cNewColor.a = fNewAlpha;
     
         // 크기 계산 -> 시간이 지날수록 감소
         vNewSize = float2(input[0].initialSize.x * fNewAlpha, input[0].initialSize.y * fNewAlpha);

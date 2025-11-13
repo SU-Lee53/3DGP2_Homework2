@@ -250,7 +250,7 @@ bool GameScene::ProcessInput(UCHAR* pKeysBuffer)
 				XMFLOAT3 xmf3Pos = p->GetPosition();
 				EffectParameter param;
 				param.xmf3Position = xmf3Pos;
-				param.xmf3Force = XMFLOAT3(0, 0, 0);
+				param.xmf3Force = XMFLOAT3(0, RandomGenerator::GenerateRandomFloatInRange(0.f, 5.f), 0);
 				param.fElapsedTime = 0.f;
 
 				EFFECT->AddEffect<ExplosionEffect>(param);
