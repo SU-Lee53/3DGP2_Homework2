@@ -11,6 +11,16 @@ public:
 
 	template<typename T>
 	void UpdateData(T* pData) const;
+
+	template<typename T>
+	void UpdateData(std::vector<T> data, UINT offset = 0);
+
+	template<typename T>
+	void UpdateData(const T& data, UINT offset, UINT nDatas);
+
+	template<typename T>
+	void UpdateData(const T& data, UINT index);
+
 	void SetBufferToPipeline(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT uiRootParameterIndex) const;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE GetCPUDescriptorHandle() const;
@@ -27,4 +37,26 @@ template<typename T>
 inline void ConstantBuffer::UpdateData(T* pData) const
 {
 	::memcpy(m_pMappedPtr, pData, sizeof(T));
+}
+
+template<typename T>
+inline void ConstantBuffer::UpdateData(std::vector<T> data, UINT offset)
+{
+	T* pMappedPtr = reinterpret_cast<T*>(m_pMappedPtr);
+	::memcpy(pMappedPtr + offset, data.data(), data.size() * sizeof(T));
+
+}
+
+template<typename T>
+inline void ConstantBuffer::UpdateData(const T& data, UINT offset, UINT nDatas)
+{
+	T* pMappedPtr = reinterpret_cast<T*>(m_pMappedPtr);
+	::memcpy(pMappedPtr + offset, &data, nDatas * sizeof(T));
+}
+
+template<typename T>
+inline void ConstantBuffer::UpdateData(const T& data, UINT index)
+{
+	T* pMappedPtr = reinterpret_cast<T*>(m_pMappedPtr);
+	::memcpy(pMappedPtr + index, &data, sizeof(T));
 }

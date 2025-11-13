@@ -17,6 +17,7 @@ std::unique_ptr<RenderManager>		GameFramework::g_pRenderManager = nullptr;
 std::unique_ptr<UIManager>			GameFramework::g_pUIManager = nullptr;
 std::unique_ptr<TextureManager>		GameFramework::g_pTextureManager = nullptr;
 std::unique_ptr<ShaderManager>		GameFramework::g_pShaderManager = nullptr;
+std::unique_ptr<EffectManager>		GameFramework::g_pEffectManager = nullptr;
 
 std::vector<std::shared_ptr<Scene>>		GameFramework::g_pScenes{};
 std::shared_ptr<Scene>					GameFramework::g_pCurrentScene = nullptr;
@@ -48,6 +49,7 @@ GameFramework::GameFramework(HINSTANCE hInstance, HWND hWnd, UINT uiWidth, UINT 
 	g_pTextureManager = std::make_unique<TextureManager>(m_pd3dDevice);
 	g_pRenderManager = std::make_unique<RenderManager>(m_pd3dDevice, m_pd3dCommandList);
 	g_pShaderManager = std::make_unique<ShaderManager>(m_pd3dDevice);
+	g_pEffectManager = std::make_unique<EffectManager>();
 	g_pShaderManager->Initialize();
 
 	g_pUIManager = std::make_unique<UIManager>(m_pd3dDevice);
@@ -69,6 +71,7 @@ void GameFramework::BuildObjects()
 	// Build
 	{
 		g_pTextureManager->LoadGameTextures(m_pd3dCommandList);
+		g_pEffectManager->Initialize(m_pd3dDevice, m_pd3dCommandList);
 
 		std::shared_ptr<IntroScene> pIntroScene = std::make_shared<IntroScene>();
 		pIntroScene->BuildObjects(m_pd3dDevice, m_pd3dCommandList);
@@ -108,6 +111,7 @@ void GameFramework::Update()
 
 	g_pCurrentScene->Update(m_GameTimer.GetTimeElapsed());
 
+	EFFECT->Update(m_GameTimer.GetTimeElapsed());
 }
 
 void GameFramework::Render()
@@ -132,6 +136,7 @@ void GameFramework::Render()
 		}
 
 		UI->Render(m_pd3dCommandList);
+		EFFECT->Render(m_pd3dCommandList);
 	}
 
 	RenderEnd();

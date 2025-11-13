@@ -6,6 +6,7 @@
 #include "UIManager.h"
 #include "TextureManager.h"
 #include "ShaderManager.h"
+#include "EffectManager.h"
 
 class Scene;
 
@@ -50,6 +51,7 @@ public:
 	static std::unique_ptr<UIManager>			g_pUIManager;
 	static std::unique_ptr<TextureManager>		g_pTextureManager;
 	static std::unique_ptr<ShaderManager>		g_pShaderManager;
+	static std::unique_ptr<EffectManager>		g_pEffectManager;
 
 #pragma region D3D
 private:
@@ -128,5 +130,6 @@ private:
 #define UI GameFramework::g_pUIManager
 #define TEXTURE GameFramework::g_pTextureManager
 #define SHADER GameFramework::g_pShaderManager
+#define EFFECT GameFramework::g_pEffectManager
 
 #define CUR_SCENE GameFramework::g_pCurrentScene

@@ -180,12 +180,12 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 
 		// Building
 		{
-			float fWidth = 150.f;
-			float fLength = 120.f;
-			float fHeight = 300.f;
+			float fWidth = 250.f;
+			float fLength = 200.f;
+			float fHeight = 1500.f;
 
 			std::shared_ptr<BuildingObject> pBuildingObject = std::make_shared<BuildingObject>();
-			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 20);
+			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 50);
 			pBuildingObject->SetPosition(XMFLOAT3(3800.f, 0.f, 3800.f));
 			m_pGameObjects.push_back(pBuildingObject);
 
@@ -247,10 +247,28 @@ bool GameScene::ProcessInput(UCHAR* pKeysBuffer)
 		auto p = PickObjectPointedByCursor(ptCursorClicked.x, ptCursorClicked.y, GetCamera());
 		if (p) {
 			if (p->IsExplosible()) {
-				__debugbreak();
+				XMFLOAT3 xmf3Pos = p->GetPosition();
+				EffectParameter param;
+				param.xmf3Position = xmf3Pos;
+				param.xmf3Force = XMFLOAT3(0, 0, 0);
+				param.fElapsedTime = 0.f;
+
+				EFFECT->AddEffect<ExplosionEffect>(param);
+				std::erase(m_pGameObjects, p);
 			}
 		}
 	}
+
+	// Explosion test
+	//if (pKeysBuffer[VK_SPACE] & 0xF0) {
+	//	XMFLOAT3 xmf3Pos = m_pPlayer->GetPosition();
+	//	EffectParameter param;
+	//	param.xmf3Position = xmf3Pos;
+	//	param.xmf3Force = XMFLOAT3(0, 0, 0);
+	//	param.fElapsedTime = 0.f;
+	//
+	//	EFFECT->AddEffect<ExplosionEffect>(param);
+	//}
 
 	return true;
 }

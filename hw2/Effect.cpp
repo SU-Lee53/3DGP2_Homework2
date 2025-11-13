@@ -1,41 +1,62 @@
 #include "stdafx.h"
 #include "Effect.h"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Effect
+
+Effect::Effect()
+{
+}
+
 void Effect::Update(float fElapsedTime)
 {
-	m_fElapsedtime += fElapsedTime;
+	//m_fElapsedtime += fElapsedTime;
 }
 
-bool Effect::IsEnd() const
+void Effect::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT nDataOffsetBaseInCBuffer, UINT nInstanceCount)
 {
-	return m_bLoop ? false : m_fElapsedtime >= m_fTotalLifetime;
+	pd3dCommandList->SetGraphicsRoot32BitConstant(2, nDataOffsetBaseInCBuffer, 0);
+
+	pd3dCommandList->SetPipelineState(m_pd3dPipelineState.Get());
+	pd3dCommandList->IASetVertexBuffers(0, 1, &m_d3dVertexBufferView);
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	pd3dCommandList->DrawInstanced(m_nParticles, nInstanceCount, 0, 0);
 }
 
-void ExplosionEffect::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles)
+bool Effect::IsEnd(float fTimeElapsed) const
 {
-	std::vector<ParticleVertexType> vertices(nParticles);
-	for (int i = 0; i < vertices.size(); ++i) {
-		vertices[i].xmf3Position = XMFLOAT3(0.f, 0.f, 0.f);
-		vertices[i].xmf4Color = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
-		vertices[i].xmf3InitialVelocity.x = RandomGenerator::GenerateRandomFloatInRange(-3.f, 3.f);
-		vertices[i].xmf3InitialVelocity.y = RandomGenerator::GenerateRandomFloatInRange(-3.f, 3.f);
-		vertices[i].xmf3InitialVelocity.z = RandomGenerator::GenerateRandomFloatInRange(-3.f, 3.f);
+	return m_bLoop ? false : fTimeElapsed >= m_fTotalLifetime;
+}
 
-		vertices[i].xmf2InitialSize.x = vertices[i].xmf2InitialSize.y = RandomGenerator::GenerateRandomFloatInRange(1.f, 10.f);
-		vertices[i].fRandomValue = RandomGenerator::GenerateRandomFloatInRange(0.f, 1.f);
-		vertices[i].fStartTime = 0.f;
-		vertices[i].fLifeTime = RandomGenerator::GenerateRandomFloatInRange(0.5f, 3.f);
-		vertices[i].fMass = RandomGenerator::GenerateRandomFloatInRange(1.f, 2.f);
+D3D12_INPUT_LAYOUT_DESC Effect::CreateInputLayout()
+{
+	//	typedef struct D3D12_INPUT_ELEMENT_DESC
+	//	{
+	//		LPCSTR SemanticName;
+	//		UINT SemanticIndex;
+	//		DXGI_FORMAT Format;
+	//		UINT InputSlot;
+	//		UINT AlignedByteOffset;
+	//		D3D12_INPUT_CLASSIFICATION InputSlotClass;
+	//		UINT InstanceDataStepRate;
+	//	} 	D3D12_INPUT_ELEMENT_DESC
 
-		m_fTotalLifetime = std::max(m_fTotalLifetime, vertices[i].fLifeTime);
-	}
+	m_d3dInputElements = {
+		{"POSITION",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},
+		{"COLOR",		0, DXGI_FORMAT_R32G32B32A32_FLOAT,	0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 0 + 12 = 12
+		{"VELOCITY",	0, DXGI_FORMAT_R32G32B32_FLOAT,		0, 28, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 12 + 16 = 28
+		{"SIZE",		0, DXGI_FORMAT_R32G32_FLOAT,		0, 40, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 28 + 12 = 40
+		{"RANDOM",		0, DXGI_FORMAT_R32_FLOAT,			0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 40 + 8 = 48
+		{"STARTTIME",	0, DXGI_FORMAT_R32_FLOAT,			0, 52, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 48 + 4 = 52
+		{"LIFETIME",	0, DXGI_FORMAT_R32_FLOAT,			0, 56, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 52 + 4 = 46
+		{"MASS",		0, DXGI_FORMAT_R32_FLOAT,			0, 60, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0},	// 56 + 4 = 60
+	};
 
-	m_pd3dParticleBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, vertices.data(), vertices.size() * sizeof(ParticleVertexType),
-		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_pd3dParticleUploadBuffer.GetAddressOf());
-	d3dVertexBufferView.BufferLocation = m_pd3dParticleBuffer->GetGPUVirtualAddress();
-	d3dVertexBufferView.StrideInBytes = sizeof(ParticleVertexType);
-	d3dVertexBufferView.SizeInBytes = sizeof(ParticleVertexType) * nParticles;
+	D3D12_INPUT_LAYOUT_DESC inputLayoutDesc;
+	inputLayoutDesc.NumElements = m_d3dInputElements.size();
+	inputLayoutDesc.pInputElementDescs = m_d3dInputElements.data();
 
+	return inputLayoutDesc;
 }
 
 D3D12_RASTERIZER_DESC Effect::CreateRasterizerState()
@@ -102,4 +123,107 @@ D3D12_DEPTH_STENCIL_DESC Effect::CreateDepthStencilState()
 	return desc;
 }
 
+D3D12_SHADER_BYTECODE Effect::CreateVertexShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
+D3D12_SHADER_BYTECODE Effect::CreateGeometryShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
+D3D12_SHADER_BYTECODE Effect::CreatePixelShader()
+{
+	return D3D12_SHADER_BYTECODE();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Effect
+
+ExplosionEffect::ExplosionEffect()
+{
+}
+
+void ExplosionEffect::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, int nParticles)
+{
+	m_nParticles = nParticles;
+	std::vector<ParticleVertexType> vertices(nParticles);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices[i].xmf3Position = XMFLOAT3(0.f, 0.f, 0.f);
+		vertices[i].xmf4Color = XMFLOAT4(1.f, 0.f, 0.f, 0.f);
+		vertices[i].xmf3InitialVelocity.x = RandomGenerator::GenerateRandomFloatInRange(-120.f, 100.f);
+		vertices[i].xmf3InitialVelocity.y = RandomGenerator::GenerateRandomFloatInRange(-80.f, 300.f);	// Y 방향은 조금 더 준다
+		vertices[i].xmf3InitialVelocity.z = RandomGenerator::GenerateRandomFloatInRange(-120.f, 120.f);
+
+		vertices[i].xmf2InitialSize.x = vertices[i].xmf2InitialSize.y = RandomGenerator::GenerateRandomFloatInRange(1.f, 2.f);
+		vertices[i].fRandomValue = RandomGenerator::GenerateRandomFloatInRange(0.f, 1.f);
+		vertices[i].fStartTime = 0.f;
+		vertices[i].fLifeTime = RandomGenerator::GenerateRandomFloatInRange(0.5f, 5.f);
+		vertices[i].fMass = RandomGenerator::GenerateRandomFloatInRange(1.f, 15.f);
+
+		m_fTotalLifetime = std::max(m_fTotalLifetime, vertices[i].fLifeTime);
+	}
+
+	m_pd3dParticleBuffer = ::CreateBufferResource(pd3dDevice, pd3dCommandList, vertices.data(), vertices.size() * sizeof(ParticleVertexType),
+		D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, m_pd3dParticleUploadBuffer.GetAddressOf());
+	m_d3dVertexBufferView.BufferLocation = m_pd3dParticleBuffer->GetGPUVirtualAddress();
+	m_d3dVertexBufferView.StrideInBytes = sizeof(ParticleVertexType);
+	m_d3dVertexBufferView.SizeInBytes = sizeof(ParticleVertexType) * nParticles;
+
+	CreatePipelineState(pd3dDevice, pd3dRootSignature);
+}
+
+void ExplosionEffect::CreatePipelineState(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
+{
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
+	{
+		d3dPipelineDesc.pRootSignature = pd3dRootSignature.Get();
+		d3dPipelineDesc.VS = CreateVertexShader();
+		d3dPipelineDesc.GS = CreateGeometryShader();
+		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_SRC_ALPHA;	// 알파 블렌딩 켬
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+		d3dPipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
+		d3dPipelineDesc.InputLayout = CreateInputLayout();
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	HRESULT hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineState.GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+}
+
+D3D12_SHADER_BYTECODE ExplosionEffect::CreateVertexShader()
+{
+	return Shader::CompileShader(L"../HLSL/Effect.hlsl", "VSExplosion", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE ExplosionEffect::CreateGeometryShader()
+{
+	return Shader::CompileShader(L"../HLSL/Effect.hlsl", "GSExplosion", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
+}
+
+D3D12_SHADER_BYTECODE ExplosionEffect::CreatePixelShader()
+{
+	return Shader::CompileShader(L"../HLSL/Effect.hlsl", "PSExplosion", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+}
 

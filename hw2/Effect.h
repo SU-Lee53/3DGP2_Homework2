@@ -1,10 +1,16 @@
 #pragma once
 
+#define MAX_EFFECT_PER_DRAW 100
+
+struct EffectParameter {
+	XMFLOAT3	xmf3Position;
+	float		fElapsedTime = 0.f;
+	XMFLOAT3	xmf3Force;
+	float pad;
+};
+
 struct CB_PARTICLE_DATA {
-	XMFLOAT4X4 gmtxViewProjection;
-	XMFLOAT3 xmf3Position;
-	float fTotalTime;
-	XMFLOAT3 xmf3Force;
+	EffectParameter parameters[MAX_EFFECT_PER_DRAW];
 };
 
 struct ParticleVertexType {
@@ -18,23 +24,27 @@ struct ParticleVertexType {
 	float fMass;
 };
 
-class Effect {
+class Effect : public std::enable_shared_from_this<Effect> {
 public:
-	Effect() {}
+	Effect();
 
-	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles) {}
+	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, int nParticles) {}
 	void Update(float fElapsedTime);
-	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList) {}
+	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, UINT nDataOffsetBaseInCBuffer, UINT nInstanceCount);
 
-	bool IsEnd() const;
+	bool IsEnd(float fTimeElapsed) const;
 
 protected:
-	virtual D3D12_INPUT_LAYOUT_DESC CreateInputLayout() { return D3D12_INPUT_LAYOUT_DESC{}; }
+	//void CreateShaderVariable(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
+
+
+protected:
+	D3D12_INPUT_LAYOUT_DESC CreateInputLayout();
 	virtual D3D12_RASTERIZER_DESC CreateRasterizerState();
 	virtual D3D12_BLEND_DESC CreateBlendState();
 	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState();
 
-	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) {}
+	void CreatePipelineState(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) {}
 
 	virtual D3D12_SHADER_BYTECODE CreateVertexShader();
 	virtual D3D12_SHADER_BYTECODE CreateGeometryShader();
@@ -44,25 +54,34 @@ protected:
 	ComPtr<ID3D12Resource> m_pd3dParticleBuffer;
 	ComPtr<ID3D12Resource> m_pd3dParticleUploadBuffer;
 
-	UINT nParticles = 0;
-	D3D12_VERTEX_BUFFER_VIEW d3dVertexBufferView;
+	UINT										m_nParticles = 0;
+	D3D12_VERTEX_BUFFER_VIEW					m_d3dVertexBufferView;
+	
+	ComPtr<ID3D12PipelineState>					m_pd3dPipelineState;
+	std::vector<D3D12_INPUT_ELEMENT_DESC>		m_d3dInputElements;
 
 	float m_fTotalLifetime = 0.f;
-	float m_fElapsedtime = 0.f;
 
 	bool m_bLoop = false;
+
+protected:
+	ComPtr<ID3DBlob> m_pd3dVertexShaderBlob = nullptr;
+	ComPtr<ID3DBlob> m_pd3dGeometryShaderBlob = nullptr;
+	ComPtr<ID3DBlob> m_pd3dPixelShaderBlob = nullptr;
 
 };
 
 class ExplosionEffect : public Effect {
 public:
-	ExplosionEffect() {}
-	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles) override;
+	ExplosionEffect();
+	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, ComPtr<ID3D12RootSignature> pd3dRootSignature, int nParticles) override;
 
 protected:
-	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr);
+	void CreatePipelineState(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr);
+
+	virtual D3D12_SHADER_BYTECODE CreateVertexShader() override;
+	virtual D3D12_SHADER_BYTECODE CreateGeometryShader() override;
+	virtual D3D12_SHADER_BYTECODE CreatePixelShader() override;
 
 private:
-
-
 };
