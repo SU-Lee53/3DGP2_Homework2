@@ -1,10 +1,11 @@
 
 cbuffer cbParticleData : register(b0)
 {
-    float3 xmf3Position;
-    float fTotalTime;
-    float3 xmf3Force;
-    float m_fTotalLifetime;
+    float4x4 gmtxViewProjection;
+    float3 gvPosition;
+    float gfTotalTime;
+    float3 gvForce;
+    float gfTotalLifetime;
 };
 
 struct VS_PARTICLE_INPUT

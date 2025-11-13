@@ -1,10 +1,10 @@
 #pragma once
 
 struct CB_PARTICLE_DATA {
+	XMFLOAT4X4 gmtxViewProjection;
 	XMFLOAT3 xmf3Position;
 	float fTotalTime;
 	XMFLOAT3 xmf3Force;
-	float m_fTotalLifetime;
 };
 
 struct ParticleVertexType {
