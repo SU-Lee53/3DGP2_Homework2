@@ -2,8 +2,8 @@
 
 struct CB_PARTICLE_DATA {
 	XMFLOAT3 xmf3Position;
-	XMFLOAT3 xmf3Force;
 	float fTotalTime;
+	XMFLOAT3 xmf3Force;
 	float m_fTotalLifetime;
 };
 
@@ -55,7 +55,7 @@ public:
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, int nParticles) override;
 
 protected:
-	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr)
+	void CreatePipelineState(ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr);
 
 private:
 

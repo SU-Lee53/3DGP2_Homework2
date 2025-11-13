@@ -13,6 +13,7 @@ public:
 
 private:
 	ComPtr<ID3D12Device> m_pd3dDevice;	// Ref to GameFramework::m_pd3dDevice;
+	ComPtr<ID3D12RootSignature> m_pd3dRootSignature;
 
 	std::vector<std::shared_ptr<Effect>> m_EffectsToRender;
 
