@@ -519,6 +519,11 @@ void GameFramework::OnProcessingKeyboardMessage(HWND hWnd, UINT nMessageID, WPAR
 	case WM_KEYDOWN:
 		switch (wParam) {
 		case VK_F1:
+		case VK_F2:
+			CUR_SCENE->GetPlayer()->ChangeCamera((DWORD)(wParam - VK_F1 + 1), m_GameTimer.GetTimeElapsed());
+			break;
+
+		case VK_F3:
 			RenderManager::g_bRenderOBBForDebug = !RenderManager::g_bRenderOBBForDebug;
 			break;
 		default:
