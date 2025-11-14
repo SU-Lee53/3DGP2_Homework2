@@ -157,10 +157,10 @@ void ExplosionEffect::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 		vertices[i].xmf3InitialVelocity.z = RandomGenerator::GenerateRandomFloatInRange(-120.f, 120.f);
 
 		vertices[i].xmf2InitialSize.x = vertices[i].xmf2InitialSize.y = RandomGenerator::GenerateRandomFloatInRange(1.f, 10.f);
-		vertices[i].fRandomValue = RandomGenerator::GenerateRandomFloatInRange(0.f, 500.f);
+		vertices[i].fRandomValue = RandomGenerator::GenerateRandomFloatInRange(0.f, 1.f);
 		vertices[i].fStartTime = 0.f;
 		vertices[i].fLifeTime = RandomGenerator::GenerateRandomFloatInRange(0.5f, 5.f);
-		vertices[i].fMass = vertices[i].xmf2InitialSize.x * 1.5;
+		vertices[i].fMass = vertices[i].xmf2InitialSize.x * 10;
 
 		m_fTotalLifetime = std::max(m_fTotalLifetime, vertices[i].fLifeTime);
 	}
