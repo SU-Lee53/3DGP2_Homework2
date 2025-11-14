@@ -64,6 +64,7 @@ private:
 	void RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 	void RenderMirrors(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 	void RenderTransparent(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	void RenderSkybox(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
 	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 
@@ -75,18 +76,15 @@ private:
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceDatas;
 	UINT m_nInstanceIndex = 0;
-	
+
+	std::vector<std::shared_ptr<MirrorObject>> m_pMirrorObjects;
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceInMirrorIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceInMirrorDatas;
+	UINT m_nInstanceInMirrorIndex = 0;
 
 	// 인스턴싱 불가능함
 	// 카메라 기준 정렬이 필요한데 동시에 그리는건 말이 안됨
 	std::vector<std::shared_ptr<GameObject>> m_pTransparentObjects;
-
-
-	UINT m_nInstanceInMirrorIndex = 0;
-
-	std::vector<std::shared_ptr<MirrorObject>> m_pMirrorObjects;
 
 	std::shared_ptr<class TerrainObject>	m_pTerrain;
 	

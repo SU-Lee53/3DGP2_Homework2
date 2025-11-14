@@ -271,6 +271,100 @@ float4 PSBillboard(GS_BILLBOARD_OUTPUT input) : SV_Target0
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Skybox
+
+struct VS_SKYBOX_OUTPUT
+{
+    float4 position : POSITION;
+};
+
+struct GS_SKYBOX_OUTPUT
+{
+    float4 position : SV_Position;
+    float3 uv : TEXCOORD0;
+};
+
+VS_SKYBOX_OUTPUT VSSkybox(uint nVertexID : SV_VertexID)
+{
+    VS_SKYBOX_OUTPUT output;
+    output.position = float4(0.f, 0.f, 0.f, 1.f);
+    return output;
+}
+
+[maxvertexcount(24)]
+void GSSkybox(point VS_SKYBOX_OUTPUT input[1], inout TriangleStream<GS_SKYBOX_OUTPUT> outStream)
+{
+    float3 vCenter = gvCameraPosition;
+    float3 vExtent = 5.f;
+    float4 qOrientation = normalize(gvOBBOrientationQuat);
+    
+    float3 vAxisX = float3(1.f, 0.f, 0.f);
+    float3 vAxisY = float3(0.f, 1.f, 0.f);
+    float3 vAxisZ = float3(0.f, 0.f, 1.f);
+    
+    float3 ex = vAxisX * vExtent.x;
+    float3 ey = vAxisY * vExtent.y;
+    float3 ez = vAxisZ * vExtent.z;
+
+    float3 c[8];
+    float3 T00 = vCenter - ex + ey + ez;
+    float3 T01 = vCenter + ex + ey + ez;
+    float3 T10 = vCenter - ex + ey - ez;
+    float3 T11 = vCenter + ex + ey - ez;
+    
+    float3 B00 = vCenter - ex - ey + ez;
+    float3 B01 = vCenter + ex - ey + ez;
+    float3 B10 = vCenter - ex - ey - ez;
+    float3 B11 = vCenter + ex - ey - ez;
+    
+    matrix mtxVP = mul(gmtxView, gmtxProjection);
+    
+    GS_SKYBOX_OUTPUT output;
+    
+    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 0.f); outStream.Append(output);
+    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 0.f); outStream.Append(output);
+    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 0.f); outStream.Append(output);
+    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 0.f); outStream.Append(output);
+    outStream.RestartStrip();                        
+                                                     
+    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 1.f); outStream.Append(output);
+    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 1.f); outStream.Append(output);
+    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 1.f); outStream.Append(output);
+    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 1.f); outStream.Append(output);
+    outStream.RestartStrip();                        
+                                                     
+    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 2.f); outStream.Append(output);
+    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
+    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 2.f); outStream.Append(output);
+    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
+    outStream.RestartStrip();                       
+                                                    
+    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 3.f); outStream.Append(output);
+    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 3.f); outStream.Append(output);
+    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 3.f); outStream.Append(output);
+    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 3.f); outStream.Append(output);
+    outStream.RestartStrip();                        
+                                                     
+    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 4.f); outStream.Append(output);
+    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 4.f); outStream.Append(output);
+    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 4.f); outStream.Append(output);
+    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 4.f); outStream.Append(output);
+    outStream.RestartStrip();                        
+                                                     
+    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 5.f); outStream.Append(output);
+    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 5.f); outStream.Append(output);
+    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 5.f); outStream.Append(output);
+    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 5.f); outStream.Append(output);
+    outStream.RestartStrip();
+    
+}
+
+float4 PSSkybox(GS_SKYBOX_OUTPUT input) : SV_Target0
+{
+    return gtxtSkyboxarr.Sample(gssClamp, input.uv);
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // OBBDebugShader
 
 struct VS_DEBUG_OUTPUT
@@ -312,15 +406,15 @@ void GSDebug(point VS_DEBUG_OUTPUT input[1], inout TriangleStream<GS_DEBUG_OUTPU
     float3 ez = vAxisZ * vExtent.z;
 
     float3 c[8];
-    float3 T00 = vCenter + - ex + ey + ez;
-    float3 T01 = vCenter + + ex + ey + ez;
-    float3 T10 = vCenter + - ex + ey - ez;
-    float3 T11 = vCenter + + ex + ey - ez;
+    float3 T00 = vCenter - ex + ey + ez;
+    float3 T01 = vCenter + ex + ey + ez;
+    float3 T10 = vCenter - ex + ey - ez;
+    float3 T11 = vCenter + ex + ey - ez;
     
-    float3 B00 = vCenter + - ex - ey + ez;
-    float3 B01 = vCenter + + ex - ey + ez;
-    float3 B10 = vCenter + - ex - ey - ez;
-    float3 B11 = vCenter + + ex - ey - ez;
+    float3 B00 = vCenter - ex - ey + ez;
+    float3 B01 = vCenter + ex - ey + ez;
+    float3 B10 = vCenter - ex - ey - ez;
+    float3 B11 = vCenter + ex - ey - ez;
     
     matrix mtxVP = mul(gmtxView, gmtxProjection);
     

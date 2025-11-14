@@ -826,3 +826,65 @@ D3D12_SHADER_BYTECODE OBBDebugShader::CreatePixelShader()
 {
 	return CompileShaderFromFile(L"../HLSL/Shaders.hlsl", "PSDebug", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
 }
+
+void SkyboxShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
+{
+	m_pd3dPipelineStates.resize(1);
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
+	{
+		d3dPipelineDesc.pRootSignature = RenderManager::g_pd3dRootSignature.Get();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("SkyboxVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("SkyboxGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("SkyboxPS");
+		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
+		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
+		d3dPipelineDesc.InputLayout.NumElements = 0;
+		d3dPipelineDesc.InputLayout.pInputElementDescs = nullptr;
+		d3dPipelineDesc.SampleMask = UINT_MAX;
+		d3dPipelineDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		d3dPipelineDesc.NumRenderTargets = 1;
+		d3dPipelineDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+		d3dPipelineDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		d3dPipelineDesc.SampleDesc.Count = 1;
+		d3dPipelineDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+	}
+
+	HRESULT hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[0].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+}
+
+D3D12_RASTERIZER_DESC SkyboxShader::CreateRasterizerState()
+{
+	D3D12_RASTERIZER_DESC desc{};
+	{
+		desc.FillMode = D3D12_FILL_MODE_SOLID;
+		desc.CullMode = D3D12_CULL_MODE_BACK;
+		desc.FrontCounterClockwise = TRUE;
+		desc.DepthBias = 0;
+		desc.DepthBiasClamp = 0.0f;
+		desc.SlopeScaledDepthBias = 0.0f;
+		desc.DepthClipEnable = TRUE;
+		desc.MultisampleEnable = FALSE;
+		desc.AntialiasedLineEnable = FALSE;
+		desc.ForcedSampleCount = 0;
+		desc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	}
+
+	return desc;
+}
+
+D3D12_DEPTH_STENCIL_DESC SkyboxShader::CreateDepthStencilState()
+{
+	D3D12_DEPTH_STENCIL_DESC desc{};
+	{
+		desc.DepthEnable = TRUE;
+		desc.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		desc.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL;
+	}
+
+	return desc;
+}

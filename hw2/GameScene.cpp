@@ -109,6 +109,7 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	m_pTerrain = std::make_shared<TerrainObject>();
 	m_pTerrain->Initialize(pd3dDevice, pd3dCommandList, "../Models/Textures/Terrain/HeightMap.raw", 257, 257, 257, 257, xmf3Scale, xmf4Color);
 
+	m_pSkyboxTexture = TEXTURE->GetTexture("Skybox");
 
 	// 오브젝트 배치
 	{

@@ -95,6 +95,7 @@ void GameFramework::BuildObjects()
 	}
 
 	g_pTextureManager->ReleaseUploadBuffers();
+	g_pShaderManager->ReleaseBlobs();
 }
 
 void GameFramework::Update()
@@ -177,8 +178,6 @@ void GameFramework::CreateFactory()
 	}
 
 	CreateDXGIFactory2(ndxgiFactoryFlags, IID_PPV_ARGS(m_pdxgiFactory.GetAddressOf()));
-
-
 }
 
 void GameFramework::CreateDevice()

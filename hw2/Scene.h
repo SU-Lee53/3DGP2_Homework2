@@ -57,6 +57,8 @@ public:
 	std::shared_ptr<Player> GetPlayer() const;
 	const std::vector<std::shared_ptr<GameObject>>& GetGameObjects() const;
 
+	std::shared_ptr<Texture> GetSkyboxTexture() { return m_pSkyboxTexture; }
+
 protected:
 	std::shared_ptr<Player>						m_pPlayer;
 	std::vector<std::shared_ptr<GameObject>>	m_pGameObjects;
@@ -65,6 +67,7 @@ protected:
 
 	std::shared_ptr<TerrainObject>				m_pTerrain;
 	// TODO : Add Skybox
+	std::shared_ptr<Texture>					m_pSkyboxTexture;
 
 	XMFLOAT4									m_xmf4GlobalAmbient;
 

@@ -86,6 +86,16 @@ protected:
 
 };
 
+class SkyboxShader : public Shader {
+public:
+	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;
+
+protected:
+	virtual D3D12_RASTERIZER_DESC CreateRasterizerState() override;
+	virtual D3D12_DEPTH_STENCIL_DESC CreateDepthStencilState() override;
+
+};
+
 class OBBDebugShader : public Shader {
 public:
 	virtual void Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature = nullptr) override;

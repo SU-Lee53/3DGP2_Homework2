@@ -86,9 +86,18 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 	descHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
 
 	// Skybox 추가 필요
-	// 일단 임시로 1칸 증가시킴
-	descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
-	descHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	if (CUR_SCENE->GetSkyboxTexture()) {
+		m_pd3dDevice->CopyDescriptorsSimple(1, descHandle.cpuHandle, CUR_SCENE->GetSkyboxTexture()->GetSRVCPUHandle(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+
+		pd3dCommandList->SetGraphicsRootDescriptorTable(1, descHandle.gpuHandle);
+		descHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	}
+	else {
+		descHandle.cpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+		descHandle.gpuHandle.ptr += GameFramework::g_uiDescriptorHandleIncrementSize;
+	}
+
 
 	RenderObjects(pd3dCommandList, descHandle);
 
@@ -97,7 +106,8 @@ void RenderManager::Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 	if (m_pTerrain) {
 		RenderTerrain(pd3dCommandList, descHandle);
 	}
-	// RenderSkybox()
+
+	RenderSkybox(pd3dCommandList, descHandle);
 
 	RenderMirrors(pd3dCommandList, descHandle);
 
@@ -329,13 +339,14 @@ void RenderManager::RenderTransparent(ComPtr<ID3D12GraphicsCommandList> pd3dComm
 
 		nInstanceBase += nInstanceCount;
 	}
+}
 
-
-
-
-
-
-
+void RenderManager::RenderSkybox(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle)
+{
+	auto pSkyboxShader = SHADER->Get<SkyboxShader>();
+	pSkyboxShader->OnPrepareRender(pd3dCommandList);
+	pd3dCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_POINTLIST);
+	pd3dCommandList->DrawInstanced(1, 1, 0, 0);
 }
 
 void RenderManager::CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice)

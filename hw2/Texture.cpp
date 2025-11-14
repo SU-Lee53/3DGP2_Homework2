@@ -188,6 +188,7 @@ void Texture::LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12
 	m_SRVCPUDescriptorHandle = TEXTURE->CreateSRV(shared_from_this());
 }
 
+
 void Texture::ReleaseUploadBuffers()
 {
 	m_pd3dUploadBuffer.Reset();

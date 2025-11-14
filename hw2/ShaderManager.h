@@ -15,7 +15,8 @@ public:
 	std::shared_ptr<T> Get();
 
 	D3D12_SHADER_BYTECODE GetShaderByteCode(const std::string& strShaderName);
-
+	
+	void ReleaseBlobs();
 
 
 private:
