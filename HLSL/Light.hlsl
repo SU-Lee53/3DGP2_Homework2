@@ -119,16 +119,28 @@ float4 Lighting(float3 vPosition, float3 vNormal)
 		{
 			if (gLights[i].m_nType == DIRECTIONAL_LIGHT)
 			{
-				cColor += DirectionalLight(i, vNormal, vToCamera);
+                float4 cLightColor = DirectionalLight(i, vNormal, vToCamera);
+                if (cLightColor.r >= 0.f || cLightColor.g >= 0.f || cLightColor.b >= 0.f)
+                {
+                    cColor += cLightColor;
+                }
 			}
 			else if (gLights[i].m_nType == POINT_LIGHT)
 			{
-				cColor += PointLight(i, vPosition, vNormal, vToCamera);
-			}
+                float4 cLightColor = PointLight(i, vPosition, vNormal, vToCamera);
+                if (cLightColor.r >= 0.f || cLightColor.g >= 0.f || cLightColor.b >= 0.f)
+                {
+                    cColor += cLightColor;
+                }
+            }
 			else if (gLights[i].m_nType == SPOT_LIGHT)
 			{
-				cColor += SpotLight(i, vPosition, vNormal, vToCamera);
-			}
+                float4 cLightColor = SpotLight(i, vPosition, vNormal, vToCamera);
+                if (cLightColor.r >= 0.f || cLightColor.g >= 0.f || cLightColor.b >= 0.f)
+                {
+                    cColor += cLightColor;
+                }
+            }
 		}
 	}
 	cColor += (gcGlobalAmbientLight * gMaterial.m_cAmbient);

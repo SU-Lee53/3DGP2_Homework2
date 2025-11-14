@@ -52,7 +52,7 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 		m_pPlayer->UpdateTransform();
 		m_pPlayer->OnPrepareRender();
 		if (m_pPlayer->IsInFrustum(GetCamera())) {
-			m_pPlayer->AddToRenderMap();
+			m_pPlayer->AddToRenderMap(false);
 		}
 	}
 
@@ -60,7 +60,7 @@ void Scene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommand
 		pObj->UpdateTransform();
 		pObj->OnPrepareRender();
 		if (pObj->IsInFrustum(GetCamera())) {
-			pObj->AddToRenderMap();
+			pObj->AddToRenderMap(false);
 		}
 	}
 
@@ -107,6 +107,20 @@ void Scene::UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandLi
 
 	m_LightCBuffer.UpdateData(&lightData);
 
+}
+
+CB_LIGHT_DATA Scene::GetLightCBData()
+{
+	CB_LIGHT_DATA lightData;
+	lightData.nLights = m_pLights.size();
+
+	for (int i = 0; i < m_pLights.size(); ++i) {
+		lightData.LightData[i] = m_pLights[i]->MakeLightData();
+	}
+
+	lightData.globalAmbientLight = m_xmf4GlobalAmbient;
+
+	return lightData;
 }
 
 bool Scene::OnProcessingMouseMessage(HWND hWnd, UINT nMessageID, WPARAM wParam, LPARAM lParam)

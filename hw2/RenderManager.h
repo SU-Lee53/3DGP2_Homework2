@@ -4,7 +4,7 @@ class Mesh;
 class Material;
 class StructuredBuffer;
 
-#define MAX_INSTANCING_COUNT						10000
+#define MAX_INSTANCING_COUNT						500
 #define ASSUMED_MESH_PER_INSTANCE					30
 #define ASSUMED_MATERIAL_PER_MESH					2
 #define ASSUMED_REQUIRED_STRUCTURED_BUFFER_SIZE		MAX_INSTANCING_COUNT * ASSUMED_MESH_PER_INSTANCE * ASSUMED_MATERIAL_PER_MESH
@@ -43,7 +43,7 @@ public:
 
 	void Add(std::shared_ptr<GameObject> pGameObject);
 	void AddMirror(std::shared_ptr<MirrorObject> pMirrorObject);
-	void AddTransparent(std::shared_ptr<MirrorObject> pMirrorObject);
+	void AddTransparent(std::shared_ptr<GameObject> pGameObject);
 
 	void Render(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	void Clear();
@@ -63,6 +63,7 @@ private:
 	void RenderObjects(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 	void RenderTerrain(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 	void RenderMirrors(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
+	void RenderTransparent(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
 	void CreateGlobalRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 
@@ -77,6 +78,12 @@ private:
 	
 	std::unordered_map<INSTANCE_KEY, UINT> m_InstanceInMirrorIndexMap;
 	std::vector<std::pair<INSTANCE_KEY, std::vector<INSTANCE_DATA>>> m_InstanceInMirrorDatas;
+
+	// 인스턴싱 불가능함
+	// 카메라 기준 정렬이 필요한데 동시에 그리는건 말이 안됨
+	std::vector<std::shared_ptr<GameObject>> m_pTransparentObjects;
+
+
 	UINT m_nInstanceInMirrorIndex = 0;
 
 	std::vector<std::shared_ptr<MirrorObject>> m_pMirrorObjects;
@@ -89,6 +96,9 @@ private:
 
 	StructuredBuffer				m_InstanceDataSBuffer;
 	StructuredBuffer				m_InstanceDataOnMirrorSBuffer;
+	StructuredBuffer				m_InstanceDataTransparentSBuffer;
+
+	ConstantBuffer					m_LightOnMirrorCBuffer;
 
 	UINT m_nDrawCalls = 0;
 

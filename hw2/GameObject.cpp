@@ -327,14 +327,19 @@ void GameObject::UpdateMinMaxInBoundingBox(float& fMinX, float& fMaxX, float& fM
 	}
 }
 
-void GameObject::AddToRenderMap()
+void GameObject::AddToRenderMap(bool bTransparent)
 {
 	if (m_pMesh) {
-		RENDER->Add(shared_from_this());
+		if (bTransparent) {
+			RENDER->AddTransparent(shared_from_this());
+		}
+		else {
+			RENDER->Add(shared_from_this());
+		}
 	}
 
 	for (auto& pChild : m_pChildren) {
-		pChild->AddToRenderMap();
+		pChild->AddToRenderMap(bTransparent);
 	}
 }
 

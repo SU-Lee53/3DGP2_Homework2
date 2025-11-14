@@ -481,3 +481,12 @@ UINT TerrainObject::UpdateBillboardDataInMirror(const XMFLOAT4& xmf4MirrorPlane)
 
 	return billboardsInMirror.size();
 }
+float TerrainObject::GetHeight(float x, float z, bool bReverseQuad)
+{ 
+	// 범위 벗어나면 그냥 0 리턴
+	if (x > GetWidth() || z > GetLength()) {
+		return 0.f;
+	}
+
+	return m_pHeightMapImage->GetHeight(x, z, bReverseQuad) * m_xmf3Scale.y; 
+} 

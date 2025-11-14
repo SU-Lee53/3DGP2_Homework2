@@ -86,9 +86,9 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
         float3 vNormal = normalize(cNormalColor.rgb * 2.0f - 1.0f); //[0, 1] ¡æ [-1, 1]
         normalW = normalize(mul(vNormal, TBN));
         cIllumination = Lighting(input.positionW, normalW);
-        cColor = lerp(cColor, cIllumination, 0.5f);
     }
-
+    
+    cColor = lerp(cColor, cIllumination, 0.5f);
     return cColor;
 }
 

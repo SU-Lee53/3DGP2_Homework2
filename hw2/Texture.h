@@ -29,6 +29,8 @@ public:
 public:
 	D3D12_SHADER_RESOURCE_VIEW_DESC GetSRVDesc() const;
 
+	bool IsTransparent() { return m_bTransparent; }
+
 private:
 	UINT									m_nTextureType;
 
@@ -39,6 +41,8 @@ private:
 	UINT									m_nResourceTypes;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE				m_SRVCPUDescriptorHandle;
+
+	bool									m_bTransparent = false;
 
 public:
 	std::wstring g_wstrTexturePathBase = L"../Models/Textures/";

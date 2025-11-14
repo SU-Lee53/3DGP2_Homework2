@@ -12,6 +12,7 @@ enum TEXTURE_INDEX {
 	TEXTURE_INDEX_DETAIL_ALBEDO_MAP = 5,
 	TEXTURE_INDEX_DETAIL_NORMAL_MAP = 6,
 
+	TEXTURE_INDEX_DIFFUSE_MAP = 0,
 };
 
 enum MATERIAL_TYPE {
@@ -55,6 +56,9 @@ public:
 
 	void SetMaterialType(UINT nType) { m_nType |= nType; }
 
+	void SetTransparent(bool bTransparent) { m_bTransparent = bTransparent; }
+	void SetBlendFactor(float fBlendFactor) { m_fBlendFactor = fBlendFactor; }
+
 public:
 	XMFLOAT4	m_xmf4AlbedoColor	= XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	XMFLOAT4	m_xmf4EmissiveColor	= XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -68,6 +72,10 @@ public:
 	float		m_fGlossyReflection = 0.0f;
 
 	UINT		m_nType = 0x00;
+
+	bool		m_bTransparent = false;
+	float		m_fBlendFactor = 0.f;
+
 
 private:
 	std::shared_ptr<Shader> m_pShader;

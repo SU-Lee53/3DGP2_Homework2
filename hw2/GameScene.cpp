@@ -28,9 +28,9 @@ void GameScene::BuildDefaultLightsAndMaterials()
 
 	std::shared_ptr<SpotLight> pLight2 = std::make_shared<SpotLight>();
 	pLight2->m_bEnable = true;
-	pLight2->m_fRange = 500.0f;
+	pLight2->m_fRange = 1200.0f;
 	pLight2->m_xmf4Ambient = XMFLOAT4(0.1f, 0.1f, 0.1f, 1.0f);
-	pLight2->m_xmf4Diffuse = XMFLOAT4(0.4f, 0.4f, 0.4f, 1.0f);
+	pLight2->m_xmf4Diffuse = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
 	pLight2->m_xmf4Specular = XMFLOAT4(0.3f, 0.3f, 0.3f, 0.0f);
 	pLight2->m_xmf3Position = XMFLOAT3(-50.0f, 20.0f, -5.0f);
 	pLight2->m_xmf3Direction = XMFLOAT3(0.0f, 0.0f, 1.0f);
@@ -145,12 +145,15 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 		// Tank
 		{
 			auto pTank = RESOURCE->CopyGameObject("Tank");
+			
 			pTank->SetScale(50, 50, 50);
 			std::shared_ptr<GameObject> pTankObject = std::make_shared<GameObject>();
 			pTankObject->SetName("Tank");
 			pTankObject->SetChild(pTank);
 			pTankObject->Initialize();
+			
 		
+
 			XMFLOAT3 xmf3RotationAxis = XMFLOAT3(0.f, 1.f, 0.f);
 		
 			for (int i = 0; i < 10; i++) {

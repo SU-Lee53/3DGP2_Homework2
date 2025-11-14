@@ -179,11 +179,11 @@ void ExplosionEffect::CreatePipelineState(ComPtr<ID3D12Device> pd3dDevice, ComPt
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
 		d3dPipelineDesc.pRootSignature = pd3dRootSignature.Get();
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.GS = CreateGeometryShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("ExplosionVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("ExplosionGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("ExplosionPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
-		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false; 
 		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
 		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
 		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;

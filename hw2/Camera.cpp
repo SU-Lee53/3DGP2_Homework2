@@ -230,10 +230,29 @@ FirstPersonCamera::FirstPersonCamera(const std::shared_ptr<Camera> pOther)
 	}
 }
 
+void FirstPersonCamera::Update(const XMFLOAT3& xmf3LookAt, float fTimeElapsed)
+{
+	fTimeElapsed = fTimeElapsed == 0.f ? 0.0017f : fTimeElapsed;
+	if (m_pPlayer)
+	{
+		XMFLOAT4X4 xmf4x4Rotate = Matrix4x4::Identity();
+		XMFLOAT3 xmf3Right = m_pPlayer->GetRightVector();
+		XMFLOAT3 xmf3Up = m_pPlayer->GetUpVector();
+		XMFLOAT3 xmf3Look = m_pPlayer->GetLookVector();
+		xmf4x4Rotate._11 = xmf3Right.x; xmf4x4Rotate._21 = xmf3Up.x; xmf4x4Rotate._31 = xmf3Look.x;
+		xmf4x4Rotate._12 = xmf3Right.y; xmf4x4Rotate._22 = xmf3Up.y; xmf4x4Rotate._32 = xmf3Look.y;
+		xmf4x4Rotate._13 = xmf3Right.z; xmf4x4Rotate._23 = xmf3Up.z; xmf4x4Rotate._33 = xmf3Look.z;
+
+		XMFLOAT3 xmf3Offset = Vector3::TransformCoord(m_xmf3Offset, xmf4x4Rotate);
+		m_xmf3Position = Vector3::Add(m_pPlayer->GetPosition(), xmf3Offset);
+		SetLookAt(xmf3Look);
+	}
+}
+
 void FirstPersonCamera::Rotate(float fPitch, float fYaw, float fRoll)
 {
 	if (m_pPlayer && (fPitch != 0.0f)) {
-		XMFLOAT3 xmf3Right = m_pPlayer->GetRightVector();
+		XMFLOAT3 xmf3Right = m_pPlayer->GetRight();
 		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3Right), XMConvertToRadians(fPitch));
 		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
@@ -244,7 +263,7 @@ void FirstPersonCamera::Rotate(float fPitch, float fYaw, float fRoll)
 	}
 
 	if (m_pPlayer && (fYaw != 0.0f)) {
-		XMFLOAT3 xmf3Up = m_pPlayer->GetUpVector();
+		XMFLOAT3 xmf3Up = m_pPlayer->GetUp();
 		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3Up), XMConvertToRadians(fYaw));
 		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
@@ -255,7 +274,7 @@ void FirstPersonCamera::Rotate(float fPitch, float fYaw, float fRoll)
 	}
 
 	if (m_pPlayer && (fRoll != 0.0f)) {
-		XMFLOAT3 xmf3Look = m_pPlayer->GetLookVector();
+		XMFLOAT3 xmf3Look = m_pPlayer->GetLook();
 		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&xmf3Look), XMConvertToRadians(fRoll));
 		m_xmf3Right = Vector3::TransformNormal(m_xmf3Right, xmmtxRotate);
 		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
@@ -264,6 +283,15 @@ void FirstPersonCamera::Rotate(float fPitch, float fYaw, float fRoll)
 		m_xmf3Position = Vector3::TransformCoord(m_xmf3Position, xmmtxRotate);
 		m_xmf3Position = Vector3::Add(m_xmf3Position, m_pPlayer->GetPosition());
 	}
+}
+
+void FirstPersonCamera::SetLookAt(const XMFLOAT3& xmf3LookAt)
+{
+	// 이름은 LookAt 이지만 실질적으로 LookTo 로 작동함
+	XMFLOAT4X4 xmf4x4LookTo = Matrix4x4::LookToLH(m_xmf3Position, xmf3LookAt, m_pPlayer->GetUpVector());
+	m_xmf3Right = XMFLOAT3(xmf4x4LookTo._11, xmf4x4LookTo._21, xmf4x4LookTo._31);
+	m_xmf3Up = XMFLOAT3(xmf4x4LookTo._12, xmf4x4LookTo._22, xmf4x4LookTo._32);
+	m_xmf3Look = XMFLOAT3(xmf4x4LookTo._13, xmf4x4LookTo._23, xmf4x4LookTo._33);
 }
 
 

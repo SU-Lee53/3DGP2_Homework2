@@ -108,6 +108,13 @@ void Texture::LoadTextureFromFile(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12
 	m_wstrTextureName = wstrTextureName;
 	m_nResourceTypes = nResourceType;
 
+	// SuperCobra 의 앞유리창 부분은 특정 텍스쳐를 Metallic 텍스쳐로 이용함을 발견(Verriere_MetallicSmoothness.dds)
+	// 이 텍스쳐가 선택될 때 해당 Material 을 Transparent 하게 설정하도록 함
+	// 수정 : 1인칭시 헬기를 통으로 투명하게
+	//	if (m_wstrTextureName.contains(L"Verriere")) {
+	//		m_bTransparent = true;
+	//	}
+
 	fs::path texPath{ g_wstrTexturePathBase + wstrTextureName };
 	if (!fs::exists(texPath)) {
 		OutputDebugStringA(std::format("{} - {} : {} : {}\n", __FILE__, __LINE__, "Texture file not exist", texPath.string()).c_str());

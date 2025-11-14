@@ -46,6 +46,9 @@ public:
 
 	float GetHP() const { return m_fHP; }
 
+
+	virtual void AddToRenderMap(bool bTransparent = false) override;
+
 protected:
 	XMFLOAT3					m_xmf3Position;
 	XMFLOAT3					m_xmf3Right;

@@ -273,6 +273,13 @@ namespace Matrix4x4
 		return(xmmtx4x4Result);
 	}
 
+	inline XMFLOAT4X4 LookToLH(const XMFLOAT3& xmf3EyePosition, const XMFLOAT3& xmf3LookToPosition, const XMFLOAT3& xmf3UpDirection)
+	{
+		XMFLOAT4X4 xmmtx4x4Result;
+		XMStoreFloat4x4(&xmmtx4x4Result, XMMatrixLookToLH(XMLoadFloat3(&xmf3EyePosition), XMLoadFloat3(&xmf3LookToPosition), XMLoadFloat3(&xmf3UpDirection)));
+		return(xmmtx4x4Result);
+	}
+
 	inline XMFLOAT3 GetLook(const XMFLOAT4X4& xmmtx4x4Matrix)
 	{
 		return(Vector3::Normalize(XMFLOAT3(xmmtx4x4Matrix._31, xmmtx4x4Matrix._32, xmmtx4x4Matrix._33)));

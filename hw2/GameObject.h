@@ -89,7 +89,7 @@ public:
 
 public:
 	virtual void OnPrepareRender() {}
-	virtual void AddToRenderMap();
+	virtual void AddToRenderMap(bool bTransparent = false);
 
 public:
 	void ReleaseUploadBuffers();

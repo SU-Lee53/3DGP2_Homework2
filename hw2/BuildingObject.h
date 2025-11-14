@@ -15,7 +15,7 @@ public:
 	void Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void UpdateTransform(XMFLOAT4X4* pxmf4x4Parent = NULL) override;
 
-	virtual void AddToRenderMap() override;
+	virtual void AddToRenderMap(bool bTransparent = false) override;
 	void Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList, DescriptorHandle& refDescHandle);
 
 	void SetBlendFactor(float fFactor) { m_fBlendFactor = fFactor; }

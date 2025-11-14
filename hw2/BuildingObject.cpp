@@ -33,7 +33,7 @@ void MirrorObject::UpdateTransform(XMFLOAT4X4* pxmf4x4Parent)
 	}
 }
 
-void MirrorObject::AddToRenderMap()
+void MirrorObject::AddToRenderMap(bool bTransparent)
 {
 	RENDER->AddMirror(static_pointer_cast<MirrorObject>(shared_from_this()));
 }
@@ -162,13 +162,15 @@ void BuildingObject::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gr
 	std::shared_ptr<StandardMesh> pLeftRightMirrorMesh = StandardMesh::GenerateMirrorMesh(pd3dDevice, pd3dCommandList, fLength, fHeight, nWindowsInWidth, nWindowsInHeights);
 
 	std::shared_ptr<Material> pMirrorMaterial = std::make_shared<Material>(pd3dDevice, pd3dCommandList);
-	pMirrorMaterial->SetTexture(TEXTURE_INDEX_ALBEDO_MAP, TEXTURE->GetTexture("window"));
-	pMirrorMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
+	pMirrorMaterial->SetTexture(TEXTURE_INDEX_DIFFUSE_MAP, TEXTURE->GetTexture("window"));
+	pMirrorMaterial->SetTexture(TEXTURE_INDEX_NORMAL_MAP, TEXTURE->GetTexture("window_normal"));
+	pMirrorMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP | MATERIAL_TYPE_NORMAL_MAP);
 	pMirrorMaterial->SetShader(SHADER->Get<MirrorShader>());
 
 	std::shared_ptr<Material> pStandardMaterial = std::make_shared<Material>(pd3dDevice, pd3dCommandList);
-	pStandardMaterial->SetTexture(TEXTURE_INDEX_ALBEDO_MAP, TEXTURE->GetTexture("window"));
-	pStandardMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP);
+	pStandardMaterial->SetTexture(TEXTURE_INDEX_DIFFUSE_MAP, TEXTURE->GetTexture("window"));
+	pStandardMaterial->SetTexture(TEXTURE_INDEX_NORMAL_MAP, TEXTURE->GetTexture("window_normal"));
+	pStandardMaterial->SetMaterialType(MATERIAL_TYPE_ALBEDO_MAP | MATERIAL_TYPE_NORMAL_MAP);
 	pStandardMaterial->SetShader(SHADER->Get<StandardShader>());
 
 	float fBlendFactor = 0.5f;

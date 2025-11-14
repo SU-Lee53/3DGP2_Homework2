@@ -126,7 +126,9 @@ public:
 	FirstPersonCamera(const std::shared_ptr<Camera> pOther);
 	virtual ~FirstPersonCamera() {}
 
+	virtual void Update(const XMFLOAT3& xmf3LookAt, float fTimeElapsed) override;
 	virtual void Rotate(float fPitch = 0.0f, float fYaw = 0.0f, float fRoll = 0.0f) override;
+	virtual void SetLookAt(const XMFLOAT3& xmf3LookAt) override;
 };
 
 class ThirdPersonCamera : public Camera {

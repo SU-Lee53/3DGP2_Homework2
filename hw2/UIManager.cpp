@@ -144,9 +144,9 @@ void UIManager::CreatePipelineState()
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
 		d3dPipelineDesc.pRootSignature = m_pd3dUIRootSignature.Get();
-		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSTextureSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
-		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSTextureSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
-		d3dPipelineDesc.PS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "PSTextureSprite", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("TextureSpriteVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("TextureSpriteGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("TextureSpritePS");
 		d3dPipelineDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		d3dPipelineDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
@@ -174,9 +174,9 @@ void UIManager::CreatePipelineState()
 
 	// m_pd3dUIPipelineState[1] : Text UI
 	{
-		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSTextSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
-		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSTextSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
-		d3dPipelineDesc.PS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "PSTextSprite", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("TextSpriteVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("TextSpriteGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("TextSpritePS");
 	}
 
 	hr = m_pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dUIPipelineStates[1].GetAddressOf()));
@@ -186,9 +186,9 @@ void UIManager::CreatePipelineState()
 
 	// m_pd3dUIPipelineState[2] : Billboard UI
 	{
-		d3dPipelineDesc.VS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "VSBillboardSprite", "vs_5_1", m_pd3dVertexShaderBlob.GetAddressOf());
-		d3dPipelineDesc.GS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "GSBillboardSprite", "gs_5_1", m_pd3dGeometryShaderBlob.GetAddressOf());
-		d3dPipelineDesc.PS = Shader::CompileShader(L"../HLSL/Sprite.hlsl", "PSBillboardSprite", "ps_5_1", m_pd3dPixelShaderBlob.GetAddressOf());
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("BillboardSpriteVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("BillboardSpriteGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("BillboardSpritePS");
 		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
 	}
 

@@ -40,8 +40,16 @@ void Player::Update(float fTimeElapsed)
 	Move(xmf3Velocity, false);
 
 	UINT nCurrentCameraMode = m_pCamera->GetMode();
-	if (nCurrentCameraMode == CAMERA_MODE_THIRD_PERSON) m_pCamera->Update(m_xmf3Position, fTimeElapsed);
-	if (nCurrentCameraMode == CAMERA_MODE_THIRD_PERSON) m_pCamera->SetLookAt(m_xmf3Position);
+	if (nCurrentCameraMode == CAMERA_MODE_THIRD_PERSON) {
+		m_pCamera->Update(m_xmf3Position, fTimeElapsed);
+		m_pCamera->SetLookAt(m_xmf3Position);
+	}
+	
+	if (nCurrentCameraMode == CAMERA_MODE_FIRST_PERSON) {
+		m_pCamera->Update(m_xmf3Position, fTimeElapsed);
+		m_pCamera->SetLookAt(m_xmf3Look);
+	}
+
 	m_pCamera->RegenerateViewMatrix();
 
 	fLength = Vector3::Length(m_xmf3Velocity);
@@ -119,6 +127,16 @@ void Player::Rotate(float x, float y, float z)
 			if (m_fRoll < -20.0f) { z -= (m_fRoll + 20.0f); m_fRoll = -20.0f; }
 		}
 		m_pCamera->Rotate(x, y, z);
+
+		//if (nCurrentCameraMode == CAMERA_MODE_FIRST_PERSON) {
+		//	if (x != 0.0f)
+		//	{
+		//		XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Right), XMConvertToRadians(x));
+		//		m_xmf3Look = Vector3::TransformNormal(m_xmf3Look, xmmtxRotate);
+		//		m_xmf3Up = Vector3::TransformNormal(m_xmf3Up, xmmtxRotate);
+		//	}
+		//}
+
 		if (y != 0.0f)
 		{
 			XMMATRIX xmmtxRotate = XMMatrixRotationAxis(XMLoadFloat3(&m_xmf3Up), XMConvertToRadians(y));
@@ -172,13 +190,13 @@ std::shared_ptr<Camera> Player::OnChangeCamera(UINT nNewCameraMode, DWORD nCurre
 	switch (nNewCameraMode)
 	{
 	case CAMERA_MODE_FIRST_PERSON:
-		pNewCamera = std::make_shared<FirstPersonCamera>(pNewCamera);
+		pNewCamera = std::make_shared<FirstPersonCamera>(m_pCamera);
 		break;
 	case CAMERA_MODE_THIRD_PERSON:
-		pNewCamera = std::make_shared<ThirdPersonCamera>(pNewCamera);
+		pNewCamera = std::make_shared<ThirdPersonCamera>(m_pCamera);
 		break;
 	case CAMERA_MODE_SPACESHIP:
-		pNewCamera = std::make_shared<SpaceShipCamera>(pNewCamera);
+		pNewCamera = std::make_shared<SpaceShipCamera>(m_pCamera);
 		break;
 	}
 	if (nCurrentCameraMode == CAMERA_MODE_SPACESHIP)
@@ -221,6 +239,8 @@ void Player::OnPrepareRender()
 
 void Player::AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerrain)
 {
+	// 11.14
+	// TODO : 플레이어가 Terrain 범위를 벗어나면 터지는것만 고치자
 	XMFLOAT3 xmf3Scale = pTerrain->GetScale();
 	XMFLOAT3 xmf3PlayerPosition = GetPosition();
 	int z = (int)(xmf3PlayerPosition.z / xmf3Scale.z);
@@ -242,6 +262,24 @@ void Player::AdjustHeightFromTerrain(std::shared_ptr<class TerrainObject> pTerra
 		xmf3PlayerPosition.y = fHeight;
 		SetPosition(xmf3PlayerPosition);
 
+	}
+}
+
+void Player::AddToRenderMap(bool bTransparent)
+{
+	UINT nCurrentCameraMode = (m_pCamera) ? m_pCamera->GetMode() : 0x00;
+	bTransparent = nCurrentCameraMode == CAMERA_MODE_FIRST_PERSON;
+	if (m_pMesh) {
+		if (bTransparent) {
+			RENDER->AddTransparent(shared_from_this());
+		}
+		else {
+			RENDER->Add(shared_from_this());
+		}
+	}
+
+	for (auto& pChild : m_pChildren) {
+		pChild->AddToRenderMap(bTransparent);
 	}
 }
 
@@ -287,14 +325,26 @@ std::shared_ptr<Camera> AirplanePlayer::ChangeCamera(UINT nNewCameraMode, float 
 	if (nCurrentCameraMode == nNewCameraMode) return(m_pCamera);
 	switch (nNewCameraMode)
 	{
-	case CAMERA_MODE_FIRST_PERSON:
-		SetFriction(2.0f);
+	case CAMERA_MODE_THIRD_PERSON:
+		SetFriction(20.5f);
 		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		SetMaxVelocityXZ(2.5f);
-		SetMaxVelocityY(40.0f);
+		SetMaxVelocityXZ(125.5f);
+		SetMaxVelocityY(140.0f);
+		m_pCamera = OnChangeCamera(CAMERA_MODE_THIRD_PERSON, nCurrentCameraMode);
+		m_pCamera->SetTimeLag(0.25f);
+		m_pCamera->SetOffset(XMFLOAT3(0.0f, 105.0f, -140.0f));
+		m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
+		m_pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
+		m_pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
+		break;
+	case CAMERA_MODE_FIRST_PERSON:
+		SetFriction(20.5f);
+		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
+		SetMaxVelocityXZ(125.5f);
+		SetMaxVelocityY(140.0f);
 		m_pCamera = OnChangeCamera(CAMERA_MODE_FIRST_PERSON, nCurrentCameraMode);
 		m_pCamera->SetTimeLag(0.0f);
-		m_pCamera->SetOffset(XMFLOAT3(0.0f, 20.0f, 0.0f));
+		m_pCamera->SetOffset(XMFLOAT3(0.0f, 20.0f, 30.5f));
 		m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 		m_pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
 		m_pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
@@ -307,18 +357,6 @@ std::shared_ptr<Camera> AirplanePlayer::ChangeCamera(UINT nNewCameraMode, float 
 		m_pCamera = OnChangeCamera(CAMERA_MODE_SPACESHIP, nCurrentCameraMode);
 		m_pCamera->SetTimeLag(0.0f);
 		m_pCamera->SetOffset(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
-		m_pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
-		m_pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);
-		break;
-	case CAMERA_MODE_THIRD_PERSON:
-		SetFriction(20.5f);
-		SetGravity(XMFLOAT3(0.0f, 0.0f, 0.0f));
-		SetMaxVelocityXZ(25.5f);
-		SetMaxVelocityY(40.0f);
-		m_pCamera = OnChangeCamera(CAMERA_MODE_THIRD_PERSON, nCurrentCameraMode);
-		m_pCamera->SetTimeLag(0.25f);
-		m_pCamera->SetOffset(XMFLOAT3(0.0f, 105.0f, -140.0f));
 		m_pCamera->GenerateProjectionMatrix(1.01f, 5000.0f, ASPECT_RATIO, 60.0f);
 		m_pCamera->SetViewport(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight, 0.0f, 1.0f);
 		m_pCamera->SetScissorRect(0, 0, GameFramework::g_nClientWidth, GameFramework::g_nClientHeight);

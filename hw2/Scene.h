@@ -31,6 +31,8 @@ public:
 	virtual void CreateShaderVariables(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 	virtual void UpdateShaderVariable(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList);
 
+	CB_LIGHT_DATA GetLightCBData();
+
 protected:
 	virtual void CreateRootSignature(ComPtr<ID3D12Device> pd3dDevice);
 

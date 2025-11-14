@@ -192,13 +192,13 @@ D3D12_SHADER_BYTECODE Shader::CompileShader(const std::wstring& wstrFileName, co
 
 void StandardShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSignature> pd3dRootSignature)
 {
-	m_pd3dPipelineStates.resize(1);
+	m_pd3dPipelineStates.resize(2);
 
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
 		d3dPipelineDesc.pRootSignature = pd3dRootSignature ? pd3dRootSignature.Get() : RenderManager::g_pd3dRootSignature.Get();
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("StandardVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("StandardPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
@@ -213,6 +213,30 @@ void StandardShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSi
 	}
 
 	HRESULT hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[0].GetAddressOf()));
+	if (FAILED(hr)) {
+		__debugbreak();
+	}
+
+	// 블렌딩용 하나더
+	{
+		d3dPipelineDesc.DepthStencilState.DepthEnable = true;
+		d3dPipelineDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
+		d3dPipelineDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;	// 직접 정한 Blend Factor 를 이용하여 블렌딩 할 예정임
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_BLEND_FACTOR;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+		d3dPipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+	}
+
+	hr = pd3dDevice->CreateGraphicsPipelineState(&d3dPipelineDesc, IID_PPV_ARGS(m_pd3dPipelineStates[1].GetAddressOf()));
 	if (FAILED(hr)) {
 		__debugbreak();
 	}
@@ -284,8 +308,8 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc = {};
 	{
 		d3dPipelineDesc.pRootSignature = pd3dRootSignature ? pd3dRootSignature.Get() : RenderManager::g_pd3dRootSignature.Get();
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("StandardVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("StandardPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
 		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
@@ -333,8 +357,8 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	// ++. 거울부분만 Depth를 1로 초기화함
 	// 어떻게? -> Depth Test 를 하고 Stencil 이 덮어씌워진 곳만 xyww 한 곳을 넘겨줌
 	{
-		d3dPipelineDesc.VS = CreateMirrorOnStencilVertexShader();
-		d3dPipelineDesc.PS = CreateMirrorOnStencilPixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("MirrorVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("MirrorPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
 		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
@@ -382,8 +406,8 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	// 2. 거울에 반사된 객체들을 그림
 	// Stencil 값이 1 인 곳에만 그림
 	{
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("StandardVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("StandardPS");
 		d3dPipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		d3dPipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		d3dPipelineDesc.RasterizerState.FrontCounterClockwise = true;
@@ -417,8 +441,8 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	// 2-1. 거울에 반사된 Terrain을 그림
 	// Stencil 값이 1 인 곳에만 그림
 	{
-		d3dPipelineDesc.VS = CreateTerrainVertexShader();
-		d3dPipelineDesc.PS = CreateTerrainPixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("TerrainVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("TerrainPS");
 		d3dPipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		d3dPipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		d3dPipelineDesc.RasterizerState.FrontCounterClockwise = true;
@@ -452,9 +476,9 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	// 2-2. 거울에 반사된 Billboard를 그림
 	// Stencil 값이 1 인 곳에만 그림
 	{
-		d3dPipelineDesc.VS = CreateBillboardOnTerrainVertexShader();
-		d3dPipelineDesc.GS = CreateBillboardOnTerrainGeometryShader();
-		d3dPipelineDesc.PS = CreateBillboardOnTerrainPixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("BillboardVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("BillboardGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("BillboardPS");
 		d3dPipelineDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
 		d3dPipelineDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
 		d3dPipelineDesc.RasterizerState.FrontCounterClockwise = false;
@@ -488,9 +512,9 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 
 	// 3. 거울을 블렌딩하여 그림
 	{
-		d3dPipelineDesc.VS = CreateVertexShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("StandardVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("StandardPS");
 		d3dPipelineDesc.GS = D3D12_SHADER_BYTECODE{ nullptr, 0 };	// billboard GS 가 남아있으므로 초기화
-		d3dPipelineDesc.PS = CreatePixelShader();
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
 		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
@@ -634,8 +658,8 @@ void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSig
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
 		d3dPipelineDesc.pRootSignature = pd3dRootSignature ? pd3dRootSignature.Get() : RenderManager::g_pd3dRootSignature.Get();
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("TerrainVS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("TerrainPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
@@ -655,11 +679,12 @@ void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSig
 	}
 
 	{
-		d3dPipelineDesc.VS = CreateBillboardVertexShader();
-		d3dPipelineDesc.GS = CreateBillboardGeometryShader();
-		d3dPipelineDesc.PS = CreateBillboardPixelShader();
+		d3dPipelineDesc.VS =SHADER->GetShaderByteCode("BillboardVS");
+		d3dPipelineDesc.GS =SHADER->GetShaderByteCode("BillboardGS");
+		d3dPipelineDesc.PS =SHADER->GetShaderByteCode("BillboardPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = true;
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
 		d3dPipelineDesc.InputLayout.NumElements = 0;
 		d3dPipelineDesc.InputLayout.pInputElementDescs = nullptr;
@@ -743,9 +768,9 @@ void OBBDebugShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSi
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC d3dPipelineDesc{};
 	{
 		d3dPipelineDesc.pRootSignature = RenderManager::g_pd3dRootSignature.Get();
-		d3dPipelineDesc.VS = CreateVertexShader();
-		d3dPipelineDesc.GS = CreateGeometryShader();
-		d3dPipelineDesc.PS = CreatePixelShader();
+		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("DebugVS");
+		d3dPipelineDesc.GS = SHADER->GetShaderByteCode("DebugGS");
+		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("DebugPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
 		d3dPipelineDesc.BlendState = CreateBlendState();
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
