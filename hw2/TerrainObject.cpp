@@ -225,6 +225,7 @@ void TerrainObject::CreateChildWaterGridObject(ComPtr<ID3D12Device> pd3dDevice, 
 	pWaterGridObject->SetName("WaterGridFrame");
 	pWaterGridObject->m_TerrainCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
 	pWaterGridObject->m_TerrainOnMirrorCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_TERRAIN_DATA>::value, true);
+	pWaterGridObject->m_fBlendFactor = 0.4f;
 
 	XMStoreFloat4x4(&pWaterGridObject->m_xmf4x4Transform, XMMatrixTranslation(0.f, m_fWaterHeight, 0.f));
 
@@ -327,6 +328,9 @@ void TerrainObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphic
 		pd3dCommandList->SetGraphicsRootDescriptorTable(4, refDescHandle.gpuHandle);
 		refDescHandle.gpuHandle.ptr += (2 + Material::g_nTexturesPerMaterial) * GameFramework::g_uiDescriptorHandleIncrementSize;
 		// 2 (CB_MATERIAL_DATA, World) + Texture 7°³ 
+
+		float pfBlendFactor[4] = { m_fBlendFactor,m_fBlendFactor,m_fBlendFactor,m_fBlendFactor };
+		pd3dCommandList->OMSetBlendFactor(pfBlendFactor);
 	}
 
 	if (m_pTerrainMeshes.size() >= 1)

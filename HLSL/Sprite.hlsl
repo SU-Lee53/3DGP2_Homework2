@@ -113,10 +113,10 @@ void GSTextSprite(point VS_SPRITE_OUTPUT input[1], inout TriangleStream<GS_SPRIT
     float2 lbuv = float2(0, 0);
     float2 rbuv = float2(0, 0);
     
+    uint nCharacter = gCharacters[(input[0].nVertexID) / 4][(input[0].nVertexID) % 4];
+    
     float fontStrideU = 1.0f / 26.f;
     float fontStrideV = 1.0f / 3.f;
-    
-    uint nCharacter = gCharacters[(input[0].nVertexID) / 4][(input[0].nVertexID) % 4];
     if (nCharacter >= 65 && nCharacter <= 90) {
         // ´ë¹®ÀÚ
         uint nCharacterStride = nCharacter - 65;
@@ -220,12 +220,12 @@ void GSBillboardSprite(point VS_BILLBOARD_SPRITE_OUTPUT input[1], inout Triangle
     float fHalfHeight = gvBillboardSize.y * 0.5f;
     
     float4 vertices[4];
-    vertices[0] = float4(gvBillboardPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
-    vertices[1] = float4(gvBillboardPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
-    vertices[2] = float4(gvBillboardPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
-    vertices[3] = float4(gvBillboardPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[0] = float4(gvBillboardPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[1] = float4(gvBillboardPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[2] = float4(gvBillboardPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[3] = float4(gvBillboardPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
     
-    float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    float2 uvs[4] = { float2(0.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(1.f, 1.f) };
     
     GS_BILLBOARD_SPRITE_OUTPUT output;
     

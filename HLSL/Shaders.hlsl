@@ -187,8 +187,8 @@ VS_TERRAIN_OUTPUT VSTerrain(VS_TERRAIN_INPUT input)
 
 float4 PSTerrain(VS_TERRAIN_OUTPUT input) : SV_TARGET0
 {
-    float4 cBaseColor = gtxtAlbedoMap.Sample(gssWrap, input.uv0 + gmtxTerrainUVOffset);
-    float4 cDetailColor = gtxtDetailAlbedoMap.Sample(gssWrap, input.uv1 + gmtxTerrainUVOffset);
+    float4 cBaseColor = gtxtAlbedoMap.Sample(gssWrap, input.uv0);
+    float4 cDetailColor = gtxtDetailAlbedoMap.Sample(gssWrap, input.uv1 + gvTerrainUVOffset);
     
     float4 cFinalColor = lerp(cBaseColor, cDetailColor, 0.5);
     
@@ -229,12 +229,12 @@ void GSBillboard(point VS_BILLBOARD_OUTPUT input[1], inout TriangleStream<GS_BIL
     float fHalfHeight = gBillboard[input[0].nVertexID].vSize.y * 0.5f;
     
     float4 vertices[4];
-    vertices[0] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
-    vertices[1] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
-    vertices[2] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
-    vertices[3] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[0] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[1] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) + (fHalfHeight * vUp), 1.f);
+    vertices[2] = float4(gBillboard[input[0].nVertexID].vPosition + (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
+    vertices[3] = float4(gBillboard[input[0].nVertexID].vPosition - (fHalfWidth * vRight) - (fHalfHeight * vUp), 1.f);
     
-    float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    float2 uvs[4] = { float2(0.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(1.f, 1.f) };
     
     matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
     
@@ -325,32 +325,32 @@ void GSSkybox(point VS_SKYBOX_OUTPUT input[1], inout TriangleStream<GS_SKYBOX_OU
     output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 0.f); outStream.Append(output);
     output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 0.f); outStream.Append(output);
     output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 0.f); outStream.Append(output);
-    outStream.RestartStrip();                        
-                                                     
+    outStream.RestartStrip();
+    
     output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 1.f); outStream.Append(output);
     output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 1.f); outStream.Append(output);
     output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 1.f); outStream.Append(output);
     output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 1.f); outStream.Append(output);
-    outStream.RestartStrip();                        
-                                                     
+    outStream.RestartStrip();
+    
     output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 2.f); outStream.Append(output);
     output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
     output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 2.f); outStream.Append(output);
     output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
-    outStream.RestartStrip();                       
-                                                    
+    outStream.RestartStrip();
+    
     output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 3.f); outStream.Append(output);
     output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 3.f); outStream.Append(output);
     output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 3.f); outStream.Append(output);
     output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 3.f); outStream.Append(output);
-    outStream.RestartStrip();                        
+    outStream.RestartStrip();
                                                      
     output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 4.f); outStream.Append(output);
     output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 4.f); outStream.Append(output);
     output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 4.f); outStream.Append(output);
     output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 4.f); outStream.Append(output);
-    outStream.RestartStrip();                        
-                                                     
+    outStream.RestartStrip();
+    
     output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 5.f); outStream.Append(output);
     output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 5.f); outStream.Append(output);
     output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 5.f); outStream.Append(output);
@@ -438,10 +438,10 @@ void GSDebug(point VS_DEBUG_OUTPUT input[1], inout TriangleStream<GS_DEBUG_OUTPU
     output.position = mul(float4(T11, 1.f), mtxVP); outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(B00, 1.f), mtxVP); outStream.Append(output);
     output.position = mul(float4(B01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP); outStream.Append(output);
+    output.position = mul(float4(B00, 1.f), mtxVP); outStream.Append(output);
     output.position = mul(float4(B11, 1.f), mtxVP); outStream.Append(output);
+    output.position = mul(float4(B10, 1.f), mtxVP); outStream.Append(output);
     outStream.RestartStrip();
     
     output.position = mul(float4(T01, 1.f), mtxVP); outStream.Append(output);

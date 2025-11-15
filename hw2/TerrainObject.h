@@ -109,6 +109,7 @@ private:
 	XMFLOAT3 m_xmf3Scale;
 
 	float m_fWaterHeight = 250.f;
+	float m_fBlendFactor = 1.f;
 
 	XMFLOAT2									m_xmf2UVTranslation = XMFLOAT2(0,0);
 	ConstantBuffer								m_TerrainCBuffer;

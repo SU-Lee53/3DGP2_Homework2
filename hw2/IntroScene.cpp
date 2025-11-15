@@ -31,12 +31,14 @@ void IntroScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Grap
 	m_pPlayer->Initialize();
 
 	std::shared_ptr<TexturedSprite> pTextureSprite = std::make_shared<TexturedSprite>("intro", 0.f, 0.f, 1.0f, 1.0f);
-	std::shared_ptr<TextSprite> pTextSprite1 = std::make_shared<TextSprite>("3D Game Programming 2", 0.0f, 0.0f, 1.f, 0.2f, XMFLOAT4(1, 0, 0, 1), 1, false);
-	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("Start", 0.3f, 0.85f, 0.7f, 0.95f, XMFLOAT4(1, 0, 0, 1), 1, true);
+	std::shared_ptr<TextSprite> pTextSprite1 = std::make_shared<TextSprite>("3D GAME PROGRAMMING 2", 0.0f, 0.0f, 1.f, 0.15f, XMFLOAT4(1, 0, 0, 1), 1, false);
+	std::shared_ptr<TextSprite> pTextSprite2 = std::make_shared<TextSprite>("START", 0.1f, 0.85f, 0.4f, 0.95f, XMFLOAT4(1, 0, 0, 1), 1, true);
+	std::shared_ptr<TextSprite> pTextSprite3 = std::make_shared<TextSprite>("EXIT", 0.6f, 0.85f, 0.85f, 0.95f, XMFLOAT4(1, 0, 0, 1), 1, true);
 
 	m_pSprites.push_back(pTextureSprite);
 	m_pSprites.push_back(pTextSprite1);
 	m_pSprites.push_back(pTextSprite2);
+	m_pSprites.push_back(pTextSprite3);
 
 	CreateShaderVariables(pd3dDevice, pd3dCommandList);
 }
@@ -52,6 +54,10 @@ bool IntroScene::ProcessInput(UCHAR* pKeysBuffer)
 		auto pClickedSprite = CheckButtonClicked();
 		if (pClickedSprite == m_pSprites[2]) {
 			GameFramework::ChangeScene(1);
+		}
+		
+		if (pClickedSprite == m_pSprites[3]) {
+			PostQuitMessage(0);
 		}
 
 	}

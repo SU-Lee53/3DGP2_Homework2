@@ -46,11 +46,14 @@ public:
 	POINT					m_ptOldCursorPos;
 	TSTRING					m_tstrFrameRate;
 
+	// Resources
 	static std::unique_ptr<ResourceManager>		g_pResourceManager;
-	static std::unique_ptr<RenderManager>		g_pRenderManager;
-	static std::unique_ptr<UIManager>			g_pUIManager;
 	static std::unique_ptr<TextureManager>		g_pTextureManager;
 	static std::unique_ptr<ShaderManager>		g_pShaderManager;
+	
+	// Rendering
+	static std::unique_ptr<RenderManager>		g_pRenderManager;
+	static std::unique_ptr<UIManager>			g_pUIManager;
 	static std::unique_ptr<EffectManager>		g_pEffectManager;
 
 #pragma region D3D
@@ -125,11 +128,12 @@ private:
 #pragma endregion
 };
 
-#define RESOURCE GameFramework::g_pResourceManager
-#define RENDER GameFramework::g_pRenderManager
-#define UI GameFramework::g_pUIManager
-#define TEXTURE GameFramework::g_pTextureManager
-#define SHADER GameFramework::g_pShaderManager
-#define EFFECT GameFramework::g_pEffectManager
+#define RENDER		GameFramework::g_pRenderManager
+#define UI			GameFramework::g_pUIManager
+#define EFFECT		GameFramework::g_pEffectManager
 
-#define CUR_SCENE GameFramework::g_pCurrentScene
+#define RESOURCE	GameFramework::g_pResourceManager
+#define TEXTURE		GameFramework::g_pTextureManager
+#define SHADER		GameFramework::g_pShaderManager
+
+#define CUR_SCENE	GameFramework::g_pCurrentScene

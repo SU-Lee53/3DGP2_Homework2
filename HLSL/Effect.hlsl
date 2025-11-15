@@ -81,7 +81,6 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
     float fElapsedTime = gParticleData[gnDataIndex + input[0].instanceID].fElapsedTime;
     float3 vForce = gParticleData[gnDataIndex + input[0].instanceID].vForce;
     
-    
     float3 vUp = gmtxView._12_22_32;
     //float3 vUp = float3(0, 1, 0);
     float3 vLook = gvCameraPosition.xyz - input[0].positionW;
@@ -102,9 +101,9 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
     
         // 새로운 위치의 계산
         // 중력이 너무 약해서 좀 강하게 만듬
-        float fForceX = vForce.x + (gvGravity.x * 100.f) * input[0].mass;
-        float fForceY = vForce.y + (gvGravity.y * 100.f) * input[0].mass;
-        float fForceZ = vForce.z + (gvGravity.z * 100.f) * input[0].mass;
+        float fForceX = vForce.x + (gvGravity.x * 350.f) * input[0].mass;
+        float fForceY = vForce.y + (gvGravity.y * 350.f) * input[0].mass;
+        float fForceZ = vForce.z + (gvGravity.z * 350.f) * input[0].mass;
     
         // F = ma -> a = F / m
         float fAccX = fForceX / input[0].mass;
@@ -115,7 +114,7 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
         float fRandomValue = input[0].randomValue * 2000.f;
         float3 initialDirection = normalize(input[0].initialVelocity);
         float dX = (initialDirection.x * fRandomValue * fNewTime) + (0.5 * fAccX * fNewTimeSq);
-        float dY = (initialDirection.y * 1.5 * fRandomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
+        float dY = (initialDirection.y * 1.2 * fRandomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
         float dZ = (initialDirection.z * fRandomValue * fNewTime) + (0.5 * fAccZ * fNewTimeSq);
     
         vNewPosition += float3(dX, dY, dZ);

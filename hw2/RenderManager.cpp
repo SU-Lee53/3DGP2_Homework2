@@ -7,7 +7,7 @@
 #include "BuildingObject.h"	// MirrorObject
 
 ComPtr<ID3D12RootSignature> RenderManager::g_pd3dRootSignature = nullptr;
-bool RenderManager::g_bRenderOBBForDebug = true;
+bool RenderManager::g_bRenderOBBForDebug = false;
 
 RenderManager::RenderManager(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 {

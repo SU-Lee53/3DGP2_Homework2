@@ -47,7 +47,7 @@ void GameScene::BuildDefaultLightsAndMaterials()
 	pLight3->m_xmf4Ambient = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	pLight3->m_xmf4Diffuse = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);
 	pLight3->m_xmf4Specular = XMFLOAT4(0.4f, 0.4f, 0.4f, 0.0f);
-	pLight3->m_xmf3Direction = XMFLOAT3(1.0f, 0.0f, 0.0f);
+	pLight3->m_xmf3Direction = XMFLOAT3(1.0f, -1.0f, 1.0f);
 	m_pLights.push_back(pLight3);
 
 	std::shared_ptr<SpotLight> pLight4 = std::make_shared<SpotLight>();
@@ -108,6 +108,7 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	XMFLOAT4 xmf4Color(0.0f, 0.5f, 0.0f, 0.0f);
 	m_pTerrain = std::make_shared<TerrainObject>();
 	m_pTerrain->Initialize(pd3dDevice, pd3dCommandList, "../Models/Textures/Terrain/HeightMap.raw", 257, 257, 257, 257, xmf3Scale, xmf4Color);
+	m_pPlayer->SetPosition(XMFLOAT3(m_pTerrain->GetWidth() / 2, 2000.0f, m_pTerrain->GetLength() / 2));
 
 	m_pSkyboxTexture = TEXTURE->GetTexture("Skybox");
 
@@ -184,13 +185,13 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 
 		// Building
 		{
-			float fWidth = 250.f;
-			float fLength = 200.f;
+			float fWidth = 350.f;
+			float fLength = 300.f;
 			float fHeight = 1500.f;
 
 			std::shared_ptr<BuildingObject> pBuildingObject = std::make_shared<BuildingObject>();
-			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 50);
-			pBuildingObject->SetPosition(XMFLOAT3(3800.f, 0.f, 3800.f));
+			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 63);
+			pBuildingObject->SetPosition(XMFLOAT3(3900.f, 0.f, 3900.f));
 			m_pGameObjects.push_back(pBuildingObject);
 
 
@@ -308,10 +309,11 @@ void GameScene::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12GraphicsCom
 		if (pObj->GetName() == "Tank") {
 			XMFLOAT3 xmf3TankPosition = pObj->GetPosition();
 			XMFLOAT3 xmf3Up = XMFLOAT3(0.f, 1.f, 0.f);
+			XMFLOAT3 xmf3TankRight = pObj->GetRight();
 			float fBillboardHeight = 150.f;
 
 			XMFLOAT3 xmf3BillboardPos;
-			XMStoreFloat3(&xmf3BillboardPos, XMVectorAdd(XMLoadFloat3(&xmf3TankPosition), XMLoadFloat3(&xmf3Up) * fBillboardHeight));
+			XMStoreFloat3(&xmf3BillboardPos, XMVectorAdd(XMVectorAdd(XMLoadFloat3(&xmf3TankPosition), XMLoadFloat3(&xmf3Up) * fBillboardHeight), XMLoadFloat3(&xmf3TankRight) * 30));
 
 			m_pBillboardSprites[nTank]->SetPosition(xmf3BillboardPos);
 			m_pBillboardSprites[nTank]->AddToUI(0);

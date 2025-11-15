@@ -297,7 +297,6 @@ void MirrorShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSign
 	// 2. 거울을 스텐실 버퍼에 그림
 	// 3. 거울에 반사된 객체들을 그림
 	// 4. 거울을 블렌딩해서 그림
-	// 2, 3, 4 만 만들면 됨
 
 	// 추가 : Terrain 과 Terrain 위의 빌보드 그리기 용도 전부 다 따로 만들어야함
 	// 추가 : 거울 부분만 Depth를 1로 초기화하도록 Pipeline 을 추가
@@ -661,7 +660,18 @@ void TerrainShader::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12RootSig
 		d3dPipelineDesc.VS = SHADER->GetShaderByteCode("TerrainVS");
 		d3dPipelineDesc.PS = SHADER->GetShaderByteCode("TerrainPS");
 		d3dPipelineDesc.RasterizerState = CreateRasterizerState();
-		d3dPipelineDesc.BlendState = CreateBlendState();
+		d3dPipelineDesc.BlendState.AlphaToCoverageEnable = false;
+		d3dPipelineDesc.BlendState.IndependentBlendEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendEnable = true;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOpEnable = false;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_BLEND_FACTOR;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlend = D3D12_BLEND_INV_BLEND_FACTOR;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOp = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].SrcBlendAlpha = D3D12_BLEND_ONE;
+		d3dPipelineDesc.BlendState.RenderTarget[0].DestBlendAlpha = D3D12_BLEND_ZERO;
+		d3dPipelineDesc.BlendState.RenderTarget[0].BlendOpAlpha = D3D12_BLEND_OP_ADD;
+		d3dPipelineDesc.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
+		d3dPipelineDesc.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
 		d3dPipelineDesc.DepthStencilState = CreateDepthStencilState();
 		d3dPipelineDesc.InputLayout = CreateInputLayout();
 		d3dPipelineDesc.SampleMask = UINT_MAX;

@@ -59,7 +59,7 @@ Texture2DArray gtxtSkyboxarr : register(t0);
 cbuffer cbTerrainData : register(b2)
 {
     matrix gmtxTerrainWorld;
-    float2 gmtxTerrainUVOffset;
+    float2 gvTerrainUVOffset;
 };
 
 struct BILLBOARD
