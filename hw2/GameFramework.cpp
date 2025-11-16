@@ -345,7 +345,7 @@ void GameFramework::CreateDepthStencilView()
 	d3dResourceDesc.Height = g_nClientHeight;
 	d3dResourceDesc.DepthOrArraySize = 1;
 	d3dResourceDesc.MipLevels = 1;
-	d3dResourceDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	d3dResourceDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
 	d3dResourceDesc.SampleDesc.Count = (g_bMsaa4xEnable) ? 4 : 1;
 	d3dResourceDesc.SampleDesc.Quality = (g_bMsaa4xEnable) ? (g_nMsaa4xQualityLevels - 1) : 0;
 	d3dResourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;

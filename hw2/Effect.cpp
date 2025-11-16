@@ -151,10 +151,13 @@ void ExplosionEffect::Create(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 	std::vector<ParticleVertexType> vertices(nParticles);
 	for (int i = 0; i < vertices.size(); ++i) {
 		vertices[i].xmf3Position = XMFLOAT3(0.f, 0.f, 0.f);
-		vertices[i].xmf4Color = XMFLOAT4(RandomGenerator::GenerateRandomFloatInRange(0.8f, 1.f), RandomGenerator::GenerateRandomFloatInRange(0.1f, 0.5f), 0.f, 0.f);
-		vertices[i].xmf3InitialVelocity.x = RandomGenerator::GenerateRandomFloatInRange(-120.f, 100.f);
-		vertices[i].xmf3InitialVelocity.y = RandomGenerator::GenerateRandomFloatInRange(-80.f, 120.f);	// Y 방향은 조금 더 준다
-		vertices[i].xmf3InitialVelocity.z = RandomGenerator::GenerateRandomFloatInRange(-120.f, 120.f);
+		vertices[i].xmf4Color.x = RandomGenerator::GenerateRandomFloatInRange(0.8f, 1.f);
+		vertices[i].xmf4Color.y = RandomGenerator::GenerateRandomFloatInRange(0.1f, 0.5f);
+		vertices[i].xmf4Color.z = 0.f;
+		vertices[i].xmf4Color.w = 1.f;
+		vertices[i].xmf3InitialVelocity.x = RandomGenerator::GenerateRandomFloatInRange(-100.f, 100.f);
+		vertices[i].xmf3InitialVelocity.y = RandomGenerator::GenerateRandomFloatInRange(-80.f, 120.f);
+		vertices[i].xmf3InitialVelocity.z = RandomGenerator::GenerateRandomFloatInRange(-100.f, 100.f);
 
 		vertices[i].xmf2InitialSize.x = vertices[i].xmf2InitialSize.y = RandomGenerator::GenerateRandomFloatInRange(1.f, 10.f);
 		vertices[i].fRandomValue = RandomGenerator::GenerateRandomFloatInRange(0.f, 1.f);

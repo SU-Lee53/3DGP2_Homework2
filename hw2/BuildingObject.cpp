@@ -81,7 +81,7 @@ void MirrorObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphics
 		m_pMesh->Render(pd3dCommandList, 0, 1);
 	}
 	
-	// 추가. 거울 부분만 Depth 를 1로 초기화한다
+	// 4. 거울 부분만 Depth 를 1로 초기화한다
 	{
 		// pipeline[1] : 거울만 Depth를 초기화
 		m_pMaterials[0]->OnPrepareRender(pd3dCommandList, 1);
@@ -89,14 +89,13 @@ void MirrorObject::Render(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graphics
 		m_pMesh->Render(pd3dCommandList, 0, 1);
 	}
 
-
-	// 4. 거울에 반사된 객체들을 그린다.
+	// 5. 거울에 반사된 객체들을 그린다.
 	{
 		// pipeline[2], [3], [4] : 거울 뒷면 객체 / Terrain / Billboard 를 그림
 		RENDER->RenderObjectsInMirrorWorld(pd3dCommandList, refDescHandle, m_xmf4MirrorPlane, m_pMaterials[0]->GetShader()->GetPipelineState(2), m_pMaterials[0]->GetShader()->GetPipelineState(3), m_pMaterials[0]->GetShader()->GetPipelineState(4));
 	}
 
-	// 5. 거울을 블렌딩해서 그린다
+	// 6. 거울을 블렌딩해서 그린다
 	{
 		m_pMaterials[0]->UpdateShaderVariable(pd3dCommandList);
 		pd3dDevice->CopyDescriptorsSimple(1, refDescHandle.cpuHandle,

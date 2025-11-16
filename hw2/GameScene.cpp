@@ -190,7 +190,7 @@ void GameScene::BuildObjects(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Graph
 			float fHeight = 1500.f;
 
 			std::shared_ptr<BuildingObject> pBuildingObject = std::make_shared<BuildingObject>();
-			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 10, 63);
+			pBuildingObject->Initialize(pd3dDevice, pd3dCommandList, fWidth, fLength, fHeight, 20, 63);
 			pBuildingObject->SetPosition(XMFLOAT3(3900.f, 0.f, 3900.f));
 			m_pGameObjects.push_back(pBuildingObject);
 

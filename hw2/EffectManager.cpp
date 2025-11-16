@@ -8,7 +8,7 @@ void EffectManager::Initialize(ComPtr<ID3D12Device> pd3dDevice, ComPtr<ID3D12Gra
 	m_ParticleCBuffer.Create(pd3dDevice, pd3dCommandList, ConstantBufferSize<CB_PARTICLE_DATA>::value, false);
 
 	std::shared_ptr<ExplosionEffect> pExplodeEffect = std::make_shared<ExplosionEffect>();
-	pExplodeEffect->Create(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, 50000);
+	pExplodeEffect->Create(pd3dDevice, pd3dCommandList, m_pd3dRootSignature, 100000);
 	m_pEffects.insert({ typeid(ExplosionEffect), EffectPair{ pExplodeEffect, {}} });
 
 }
@@ -19,17 +19,15 @@ void EffectManager::Update(float fTimeElapsed)
 		return;
 	}
 
-	// Lifetime 이 지난 이펙트들을 제거
 	for (auto& effectPair : m_pEffects) {
+		// Lifetime 이 지난 이펙트들을 제거
 		auto& [pEffect, parameters] = effectPair.second;
 		size_t nErased = std::erase_if(parameters, [&pEffect](const EffectParameter& param) {
 			return pEffect->IsEnd(param.fElapsedTime);
 		});
 		m_nParticles -= nErased;
-	}
 
-	for (auto& effectPair : m_pEffects) {
-		for (auto& param : effectPair.second.second) {
+		for (auto& param : parameters) {
 			param.fElapsedTime += fTimeElapsed;
 		}
 	}

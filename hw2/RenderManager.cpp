@@ -331,7 +331,7 @@ void RenderManager::RenderTransparent(ComPtr<ID3D12GraphicsCommandList> pd3dComm
 			pMaterials[i]->OnPrepareRender(pd3dCommandList, 1);
 			
 			// Blend factor ¼³Á¤
-			float fBlendFactor = 0.5f; // pMaterials[i]->m_fBlendFactor;
+			float fBlendFactor = 0.4f; // pMaterials[i]->m_fBlendFactor;
 			float pfBlendFactor[4] = { fBlendFactor, fBlendFactor, fBlendFactor, fBlendFactor };
 			pd3dCommandList->OMSetBlendFactor(pfBlendFactor);
 			pMesh->Render(pd3dCommandList, i, nInstanceCount);
@@ -467,6 +467,7 @@ void RenderManager::AddInMirrorSpace(std::shared_ptr<GameObject> pGameObject, co
 	XMFLOAT3 xmf3InstancePosition = pGameObject->GetPosition();
 	XMVECTOR xmvInstancePosition = XMLoadFloat3(&xmf3InstancePosition);
 	float fDistance = XMVectorGetX(XMPlaneDotCoord(XMPlaneNormalize(XMLoadFloat4(&xmf4MirrorPlane)), xmvInstancePosition));
+
 	if (fDistance > 0.f && pGameObject->GetMesh()) {
 		INSTANCE_KEY key{ pGameObject->GetMesh(), pGameObject->GetMaterials(), key.pMesh->GetSubSetCount() };
 		XMFLOAT4X4 xmf4x4InstanceData;

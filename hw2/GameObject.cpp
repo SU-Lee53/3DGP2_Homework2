@@ -100,10 +100,12 @@ void GameObject::RenderOBB(ComPtr<ID3D12GraphicsCommandList> pd3dCommandList)
 
 		XMFLOAT4 xmf4DebugColor(1.f, 0.f, 0.f, 1.f);
 
-		BoundingOrientedBox xmOBB = m_pMesh->GetOBB();
-		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Center, 0);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBB.Extents, 4);
-		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmOBB.Orientation, 8);
+		BoundingOrientedBox xmOBB = m_pMesh->GetOBBOrigin();
+		BoundingOrientedBox xmOBBToDraw;
+		xmOBB.Transform(xmOBBToDraw, XMLoadFloat4x4(&m_xmf4x4World));
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBBToDraw.Center, 0);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 3, &xmOBBToDraw.Extents, 4);
+		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmOBBToDraw.Orientation, 8);
 		pd3dCommandList->SetGraphicsRoot32BitConstants(6, 4, &xmf4DebugColor, 12);
 
 		// Draw

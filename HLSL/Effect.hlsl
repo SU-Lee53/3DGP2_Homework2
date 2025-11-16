@@ -6,6 +6,8 @@ cbuffer cbCameraData : register(b0)
     float3 gvCameraPosition;
 };
 
+#define MAX_EFFECT_PER_DRAW 100
+
 struct ParticleData
 {
     float3 vPosition;
@@ -13,8 +15,6 @@ struct ParticleData
     float3 vForce;
     float pad;
 };
-
-#define MAX_EFFECT_PER_DRAW 100
 
 cbuffer cbParticleData : register(b1)
 {
@@ -42,13 +42,7 @@ struct VS_PARTICLE_OUTPUT
 {
     float3 positionW : POSITION;
     float4 color : COLOR;
-    float3 initialVelocity : VELOCITY;
-    float2 initialSize : SIZE;
-    float randomValue : RANDOM;
-    float startTime : STARTTIME;
-    float lifeTime : LIFETIME;
-    float mass : MASS;
-    uint instanceID : INSTANCEID;
+    float2 size : SIZE;
 };
 
 struct GS_PARTICLE_OUTPUT
@@ -62,73 +56,53 @@ const static float3 gvGravity = float3(0.f, -9.8f, 0.f);
 
 VS_PARTICLE_OUTPUT VSExplosion(VS_PARTICLE_INPUT input, uint nInstanceID : SV_InstanceID)
 {
-    VS_PARTICLE_OUTPUT output;
-    output.positionW = input.position + gParticleData[gnDataIndex + nInstanceID].vPosition;
-    output.color = input.color;
-    output.initialVelocity = input.initialVelocity;
-    output.initialSize = input.initialSize;
-    output.randomValue = input.randomValue;
-    output.startTime = input.startTime;
-    output.lifeTime = input.lifeTime;
-    output.mass = input.mass;
-    output.instanceID = nInstanceID;
-    return output;
-}
-
-[maxvertexcount(4)]
-void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PARTICLE_OUTPUT> outStream)
-{
-    float fElapsedTime = gParticleData[gnDataIndex + input[0].instanceID].fElapsedTime;
-    float3 vForce = gParticleData[gnDataIndex + input[0].instanceID].vForce;
+    float fElapsedTime = gParticleData[gnDataIndex + nInstanceID].fElapsedTime;
+    float3 vForce = gParticleData[gnDataIndex + nInstanceID].vForce;
     
-    float3 vUp = gmtxView._12_22_32;
-    //float3 vUp = float3(0, 1, 0);
-    float3 vLook = gvCameraPosition.xyz - input[0].positionW;
-    vLook = normalize(vLook);
-    float3 vRight = cross(vUp, vLook);
-    
-    float3 vNewPosition = input[0].positionW;
+    float3 vNewPosition = input.position + gParticleData[gnDataIndex + nInstanceID].vPosition;
     float4 cNewColor = float4(0.f, 0.f, 0.f, 0.f);
     float fNewAlpha = 0.f;
     float2 vNewSize = float2(0, 0);
     
-    if (fElapsedTime <= input[0].lifeTime)
+    if (fElapsedTime <= input.lifeTime)
     {
-        float fNewTime = frac(fElapsedTime / input[0].lifeTime) * input[0].lifeTime; // 0 ~ lifeTime
+        float fNewTime = fElapsedTime;
         float fNewTimeSq = fNewTime * fNewTime;
     
-        float fOneMinusTime = 1 - frac(fElapsedTime / input[0].lifeTime); // 1 ~ 0
+        float fOneMinusTime = 1 - frac(fElapsedTime / input.lifeTime); // 1 ~ 0
     
         // 새로운 위치의 계산
+        
+        // F = ma
         // 중력이 너무 약해서 좀 강하게 만듬
-        float fForceX = vForce.x + (gvGravity.x * 350.f) * input[0].mass;
-        float fForceY = vForce.y + (gvGravity.y * 350.f) * input[0].mass;
-        float fForceZ = vForce.z + (gvGravity.z * 350.f) * input[0].mass;
+        float fForceX = vForce.x + (gvGravity.x * 350.f) * input.mass;
+        float fForceY = vForce.y + (gvGravity.y * 350.f) * input.mass;
+        float fForceZ = vForce.z + (gvGravity.z * 350.f) * input.mass;
     
         // F = ma -> a = F / m
-        float fAccX = fForceX / input[0].mass;
-        float fAccY = fForceY / input[0].mass;
-        float fAccZ = fForceZ / input[0].mass;
+        float fAccX = fForceX / input.mass;
+        float fAccY = fForceY / input.mass;
+        float fAccZ = fForceZ / input.mass;
     
         // s = v0t * 1/2at^2
-        float fRandomValue = input[0].randomValue * 2000.f;
-        float3 initialDirection = normalize(input[0].initialVelocity);
+        float fRandomValue = input.randomValue * 2000.f;
+        float3 initialDirection = normalize(input.initialVelocity);
         float dX = (initialDirection.x * fRandomValue * fNewTime) + (0.5 * fAccX * fNewTimeSq);
-        float dY = (initialDirection.y * 1.2 * fRandomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
+        float dY = (initialDirection.y * fRandomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
         float dZ = (initialDirection.z * fRandomValue * fNewTime) + (0.5 * fAccZ * fNewTimeSq);
     
         vNewPosition += float3(dX, dY, dZ);
     
         // 알파값 계산 -> 시간이 지날수록 투명
         // 1 ~ 0 으로 변하는 값을 이용하여 잔해가 타서 점점 검어지는것도 표현 가능할 듯
-        fNewAlpha = 1 - frac(fElapsedTime / input[0].lifeTime); // 1 ~ 0
-        cNewColor.r = input[0].color.r * fNewAlpha;
-        cNewColor.g = input[0].color.g * fNewAlpha;
-        cNewColor.b = input[0].color.b * fNewAlpha;
+        fNewAlpha = fOneMinusTime; // 1 ~ 0
+        cNewColor.r = input.color.r * fOneMinusTime;
+        cNewColor.g = input.color.g * fOneMinusTime;
+        cNewColor.b = input.color.b * fOneMinusTime;
         cNewColor.a = fNewAlpha;
     
         // 크기 계산 -> 시간이 지날수록 감소
-        vNewSize = float2(input[0].initialSize.x * fNewAlpha, input[0].initialSize.y * fNewAlpha);
+        vNewSize = float2(input.initialSize.x * fOneMinusTime, input.initialSize.y * fOneMinusTime);
     }
     else
     {
@@ -136,35 +110,52 @@ void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PART
         vNewPosition += float3(9999999.f, 9999999.f, 9999999.f);
     }
     
-    // 출력
-    float4 vertices[4];
-    vertices[0] = float4(vNewPosition + (vNewSize.x * vRight) - (vNewSize.y * vUp), 1.f);
-    vertices[1] = float4(vNewPosition + (vNewSize.x * vRight) + (vNewSize.y * vUp), 1.f);
-    vertices[2] = float4(vNewPosition - (vNewSize.x * vRight) - (vNewSize.y * vUp), 1.f);
-    vertices[3] = float4(vNewPosition - (vNewSize.x * vRight) + (vNewSize.y * vUp), 1.f);
+    VS_PARTICLE_OUTPUT output;
+    output.positionW = vNewPosition;
+    output.color = cNewColor;
+    output.size = vNewSize;
+    return output;
+}
+
+[maxvertexcount(4)]
+void GSExplosion(point VS_PARTICLE_OUTPUT input[1], inout TriangleStream<GS_PARTICLE_OUTPUT> outStream)
+{
+    float3 vUp = normalize(gmtxView._12_22_32);
+    float3 vLook = gvCameraPosition.xyz - input[0].positionW;
+    vLook = normalize(vLook);
+    float3 vRight = cross(vUp, vLook);
     
-    float2 uvs[4] = { float2(0.f, 1.f), float2(0.f, 0.f), float2(1.f, 1.f), float2(1.f, 0.f) };
+    float4 vertices[4];
+    float2 vSize = input[0].size;
+    vertices[0] = float4(input[0].positionW + (vSize.x * vRight) + (vSize.x * vUp), 1.f);
+    vertices[1] = float4(input[0].positionW - (vSize.x * vRight) + (vSize.x * vUp), 1.f);
+    vertices[2] = float4(input[0].positionW + (vSize.x * vRight) - (vSize.x * vUp), 1.f);
+    vertices[3] = float4(input[0].positionW - (vSize.x * vRight) - (vSize.x * vUp), 1.f);
+    
+    float2 uvs[4] = { float2(0.f, 0.f), float2(1.f, 0.f), float2(0.f, 1.f), float2(1.f, 1.f) };
     
     float4x4 mtxViewProjection = mul(gmtxView, gmtxProjection);
+    
+    // 출력
     GS_PARTICLE_OUTPUT output;
     
     output.position = mul(vertices[0], mtxViewProjection);
-    output.color = cNewColor;
+    output.color = input[0].color;
     output.uv = uvs[0];
     outStream.Append(output);
     
     output.position = mul(vertices[1], mtxViewProjection);
-    output.color = cNewColor;
+    output.color = input[0].color;
     output.uv = uvs[1];
     outStream.Append(output);
     
     output.position = mul(vertices[2], mtxViewProjection);
-    output.color = cNewColor;
+    output.color = input[0].color;
     output.uv = uvs[2];
     outStream.Append(output);
     
     output.position = mul(vertices[3], mtxViewProjection);
-    output.color = cNewColor;
+    output.color = input[0].color;
     output.uv = uvs[3];
     outStream.Append(output);
 }

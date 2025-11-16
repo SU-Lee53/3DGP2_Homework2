@@ -55,7 +55,7 @@ float3 ComputeNormal(float3 normalW, float3 tangentW, float2 uv)
     float3 normalFromMap = gtxtNormalMap.Sample(gssWrap, uv).rgb;
     float3 normal = (normalFromMap * 2.0f) - 1.0f; // [0, 1] ---> [-1, 1]
     
-    return mul(normal, TBN);
+    return normalize(mul(normal, TBN));
 }
 
 float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
@@ -81,10 +81,7 @@ float4 PSStandard(VS_STANDARD_OUTPUT input) : SV_TARGET
     float4 cColor = cAlbedoColor + cSpecularColor + cEmissionColor;
     if (gMaterial.m_textureMask & MATERIAL_TYPE_NORMAL_MAP)
     {
-        float3 normalW = input.normalW;
-        float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.biTangentW), normalize(input.normalW));
-        float3 vNormal = normalize(cNormalColor.rgb * 2.0f - 1.0f); //[0, 1] ¡æ [-1, 1]
-        normalW = normalize(mul(vNormal, TBN));
+        float3 normalW = ComputeNormal(input.normalW, input.tangentW, input.uv);
         cIllumination = Lighting(input.positionW, normalW);
     }
     
@@ -101,7 +98,6 @@ VS_STANDARD_OUTPUT VSMirror(VS_STANDARD_INPUT input, uint nInstanceID : SV_Insta
     VS_STANDARD_OUTPUT output;
 
     matrix mtxViewProjection = mul(gmtxView, gmtxProjection);
-	
     
     output.positionW = mul(float4(input.position, 1.f), gmtxWorld).xyz;
     output.position = mul(float4(output.positionW, 1.f), mtxViewProjection).xyww;
@@ -117,36 +113,7 @@ VS_STANDARD_OUTPUT VSMirror(VS_STANDARD_INPUT input, uint nInstanceID : SV_Insta
 
 float4 PSMirror(VS_STANDARD_OUTPUT input) : SV_TARGET
 {
-    float4 cAlbedoColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    float4 cSpecularColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    float4 cNormalColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    float4 cMetallicColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-    float4 cEmissionColor = float4(0.0f, 0.0f, 0.0f, 1.0f);
-
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_ALBEDO_MAP)
-        cAlbedoColor = gtxtAlbedoMap.Sample(gssWrap, input.uv);
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_SPECULAR_MAP)
-        cSpecularColor = gtxtSpecularMap.Sample(gssWrap, input.uv);
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_NORMAL_MAP)
-        cNormalColor = gtxtNormalMap.Sample(gssWrap, input.uv);
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_METALLIC_MAP)
-        cMetallicColor = gtxtMetallicMap.Sample(gssWrap, input.uv);
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_EMISSION_MAP)
-        cEmissionColor = gtxtEmissionMap.Sample(gssWrap, input.uv);
-
-    float4 cIllumination = float4(1.0f, 1.0f, 1.0f, 1.0f);
-    float4 cColor = cAlbedoColor + cSpecularColor + cEmissionColor;
-    if (gMaterial.m_textureMask & MATERIAL_TYPE_NORMAL_MAP)
-    {
-        float3 normalW = input.normalW;
-        float3x3 TBN = float3x3(normalize(input.tangentW), normalize(input.biTangentW), normalize(input.normalW));
-        float3 vNormal = normalize(cNormalColor.rgb * 2.0f - 1.0f); //[0, 1] ¡æ [-1, 1]
-        normalW = normalize(mul(vNormal, TBN));
-        cIllumination = Lighting(input.positionW, normalW);
-        cColor = lerp(cColor, cIllumination, 0.5f);
-    }
-
-    return cColor;
+    return float4(0.f, 0.f, 0.f, 1.f);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -296,7 +263,6 @@ void GSSkybox(point VS_SKYBOX_OUTPUT input[1], inout TriangleStream<GS_SKYBOX_OU
 {
     float3 vCenter = gvCameraPosition;
     float3 vExtent = 5.f;
-    float4 qOrientation = normalize(gvOBBOrientationQuat);
     
     float3 vAxisX = float3(1.f, 0.f, 0.f);
     float3 vAxisY = float3(0.f, 1.f, 0.f);
@@ -305,56 +271,55 @@ void GSSkybox(point VS_SKYBOX_OUTPUT input[1], inout TriangleStream<GS_SKYBOX_OU
     float3 ex = vAxisX * vExtent.x;
     float3 ey = vAxisY * vExtent.y;
     float3 ez = vAxisZ * vExtent.z;
-
-    float3 c[8];
-    float3 T00 = vCenter - ex + ey + ez;
-    float3 T01 = vCenter + ex + ey + ez;
-    float3 T10 = vCenter - ex + ey - ez;
-    float3 T11 = vCenter + ex + ey - ez;
-    
-    float3 B00 = vCenter - ex - ey + ez;
-    float3 B01 = vCenter + ex - ey + ez;
-    float3 B10 = vCenter - ex - ey - ez;
-    float3 B11 = vCenter + ex - ey - ez;
     
     matrix mtxVP = mul(gmtxView, gmtxProjection);
     
+    float4 T00 = mul(float4(vCenter - ex + ey + ez, 1.f), mtxVP).xyww;
+    float4 T01 = mul(float4(vCenter + ex + ey + ez, 1.f), mtxVP).xyww;
+    float4 T10 = mul(float4(vCenter - ex + ey - ez, 1.f), mtxVP).xyww;
+    float4 T11 = mul(float4(vCenter + ex + ey - ez, 1.f), mtxVP).xyww;
+    
+    float4 B00 = mul(float4(vCenter - ex - ey + ez, 1.f), mtxVP).xyww;
+    float4 B01 = mul(float4(vCenter + ex - ey + ez, 1.f), mtxVP).xyww;
+    float4 B10 = mul(float4(vCenter - ex - ey - ez, 1.f), mtxVP).xyww;
+    float4 B11 = mul(float4(vCenter + ex - ey - ez, 1.f), mtxVP).xyww;
+    
     GS_SKYBOX_OUTPUT output;
     
-    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 0.f); outStream.Append(output);
-    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 0.f); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 0.f); outStream.Append(output);
-    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 0.f); outStream.Append(output);
+    output.position = T11; output.uv = float3(1.f, 0.f, 0.f); outStream.Append(output);
+    output.position = T01; output.uv = float3(0.f, 0.f, 0.f); outStream.Append(output);
+    output.position = B11; output.uv = float3(1.f, 1.f, 0.f); outStream.Append(output);
+    output.position = B01; output.uv = float3(0.f, 1.f, 0.f); outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 1.f); outStream.Append(output);
-    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 1.f); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 1.f); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 1.f); outStream.Append(output);
+    output.position = T00; output.uv = float3(1.f, 0.f, 1.f); outStream.Append(output);
+    output.position = T10; output.uv = float3(0.f, 0.f, 1.f); outStream.Append(output);
+    output.position = B00; output.uv = float3(1.f, 1.f, 1.f); outStream.Append(output);
+    output.position = B10; output.uv = float3(0.f, 1.f, 1.f); outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 2.f); outStream.Append(output);
-    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
-    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 2.f); outStream.Append(output);
-    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
+    output.position = T00; output.uv = float3(0.f, 1.f, 2.f); outStream.Append(output);
+    output.position = T01; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
+    output.position = T10; output.uv = float3(0.f, 0.f, 2.f); outStream.Append(output);
+    output.position = T11; output.uv = float3(1.f, 1.f, 2.f); outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 3.f); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 3.f); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 3.f); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 3.f); outStream.Append(output);
+    output.position = B01; output.uv = float3(1.f, 0.f, 3.f); outStream.Append(output);
+    output.position = B00; output.uv = float3(0.f, 0.f, 3.f); outStream.Append(output);
+    output.position = B11; output.uv = float3(1.f, 1.f, 3.f); outStream.Append(output);
+    output.position = B10; output.uv = float3(0.f, 1.f, 3.f); outStream.Append(output);
     outStream.RestartStrip();
                                                      
-    output.position = mul(float4(T01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 4.f); outStream.Append(output);
-    output.position = mul(float4(T00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 4.f); outStream.Append(output);
-    output.position = mul(float4(B01, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 4.f); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 4.f); outStream.Append(output);
+    output.position = T01; output.uv = float3(1.f, 0.f, 4.f); outStream.Append(output);
+    output.position = T00; output.uv = float3(0.f, 0.f, 4.f); outStream.Append(output);
+    output.position = B01; output.uv = float3(1.f, 1.f, 4.f); outStream.Append(output);
+    output.position = B00; output.uv = float3(0.f, 1.f, 4.f); outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 0.f, 5.f); outStream.Append(output);
-    output.position = mul(float4(T11, 1.f), mtxVP).xyww; output.uv = float3(0.f, 0.f, 5.f); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP).xyww; output.uv = float3(1.f, 1.f, 5.f); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP).xyww; output.uv = float3(0.f, 1.f, 5.f); outStream.Append(output);
+    output.position = T10; output.uv = float3(1.f, 0.f, 5.f); outStream.Append(output);
+    output.position = T11; output.uv = float3(0.f, 0.f, 5.f); outStream.Append(output);
+    output.position = B10; output.uv = float3(1.f, 1.f, 5.f); outStream.Append(output);
+    output.position = B11; output.uv = float3(0.f, 1.f, 5.f); outStream.Append(output);
     outStream.RestartStrip();
     
 }
@@ -404,56 +369,55 @@ void GSDebug(point VS_DEBUG_OUTPUT input[1], inout TriangleStream<GS_DEBUG_OUTPU
     float3 ex = vAxisX * vExtent.x;
     float3 ey = vAxisY * vExtent.y;
     float3 ez = vAxisZ * vExtent.z;
-
-    float3 c[8];
-    float3 T00 = vCenter - ex + ey + ez;
-    float3 T01 = vCenter + ex + ey + ez;
-    float3 T10 = vCenter - ex + ey - ez;
-    float3 T11 = vCenter + ex + ey - ez;
-    
-    float3 B00 = vCenter - ex - ey + ez;
-    float3 B01 = vCenter + ex - ey + ez;
-    float3 B10 = vCenter - ex - ey - ez;
-    float3 B11 = vCenter + ex - ey - ez;
     
     matrix mtxVP = mul(gmtxView, gmtxProjection);
     
+    float4 T00 = mul(float4(vCenter - ex + ey + ez, 1.f), mtxVP);
+    float4 T01 = mul(float4(vCenter + ex + ey + ez, 1.f), mtxVP);
+    float4 T10 = mul(float4(vCenter - ex + ey - ez, 1.f), mtxVP);
+    float4 T11 = mul(float4(vCenter + ex + ey - ez, 1.f), mtxVP);
+    
+    float4 B00 = mul(float4(vCenter - ex - ey + ez, 1.f), mtxVP);
+    float4 B01 = mul(float4(vCenter + ex - ey + ez, 1.f), mtxVP);
+    float4 B10 = mul(float4(vCenter - ex - ey - ez, 1.f), mtxVP);
+    float4 B11 = mul(float4(vCenter + ex - ey - ez, 1.f), mtxVP);
+    
     GS_DEBUG_OUTPUT output;
     
-    output.position = mul(float4(T11, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B01, 1.f), mtxVP); outStream.Append(output);
+    output.position = T11; outStream.Append(output);
+    output.position = T01; outStream.Append(output);
+    output.position = B11; outStream.Append(output);
+    output.position = B01; outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T00, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T10, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP); outStream.Append(output);
+    output.position = T00; outStream.Append(output);
+    output.position = T10; outStream.Append(output);
+    output.position = B00; outStream.Append(output);
+    output.position = B10; outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T00, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T10, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T11, 1.f), mtxVP); outStream.Append(output);
+    output.position = T00; outStream.Append(output);
+    output.position = T01; outStream.Append(output);
+    output.position = T10; outStream.Append(output);
+    output.position = T11; outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(B01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP); outStream.Append(output);
+    output.position = B01; outStream.Append(output);
+    output.position = B00; outStream.Append(output);
+    output.position = B11; outStream.Append(output);
+    output.position = B10; outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T00, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B01, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B00, 1.f), mtxVP); outStream.Append(output);
+    output.position = T01; outStream.Append(output);
+    output.position = T00; outStream.Append(output);
+    output.position = B01; outStream.Append(output);
+    output.position = B00; outStream.Append(output);
     outStream.RestartStrip();
     
-    output.position = mul(float4(T10, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(T11, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B10, 1.f), mtxVP); outStream.Append(output);
-    output.position = mul(float4(B11, 1.f), mtxVP); outStream.Append(output);
+    output.position = T10; outStream.Append(output);
+    output.position = T11; outStream.Append(output);
+    output.position = B10; outStream.Append(output);
+    output.position = B11; outStream.Append(output);
     outStream.RestartStrip();
     
 }
