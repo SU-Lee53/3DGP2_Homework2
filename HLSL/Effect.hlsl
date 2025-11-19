@@ -88,7 +88,7 @@ VS_PARTICLE_OUTPUT VSExplosion(VS_PARTICLE_INPUT input, uint nInstanceID : SV_In
         float fRandomValue = input.randomValue * 2000.f;
         float3 initialDirection = normalize(input.initialVelocity);
         float dX = (initialDirection.x * fRandomValue * fNewTime) + (0.5 * fAccX * fNewTimeSq);
-        float dY = (initialDirection.y * fRandomValue * fNewTime) + (0.5 * fAccY * fNewTimeSq);
+        float dY = (initialDirection.y * fRandomValue * 1.5f * fNewTime) + (0.5 * fAccY * fNewTimeSq);
         float dZ = (initialDirection.z * fRandomValue * fNewTime) + (0.5 * fAccZ * fNewTimeSq);
     
         vNewPosition += float3(dX, dY, dZ);
